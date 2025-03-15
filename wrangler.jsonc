@@ -4,12 +4,17 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "pillow-api",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-13",
 	"observability": {
 		"enabled": true
-	}
+	},
+	"r2_buckets": [
+		{
+			"binding": "FRY_PILLOWS",
+			"bucket_name": "fry-pillows"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
