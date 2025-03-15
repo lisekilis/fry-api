@@ -15,7 +15,7 @@ enum PillowType {
 	BODY = 'BODY',
 }
 
-function validateToken(request: Request, env: Env): boolean {
+export function validateToken(request: Request, env: Env): boolean {
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader) {
 		return false;
