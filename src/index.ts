@@ -40,19 +40,14 @@ export default {
 		if (request.method === 'GET' && url.pathname === '/list') {
 			const list = await env.FRY_PILLOWS.list();
 			const files =
-				list.objects?.map(
-					(obj: {
-						key: string;
-						customMetadata: { pillowName: string; submittedAt: Date; discordUserId: number; pillowType: PillowType; userName: string };
-					}) => ({
-						key: obj.key,
-						pillowName: obj.customMetadata?.pillowName,
-						submittedAt: obj.customMetadata?.submittedAt,
-						discordUserId: obj.customMetadata?.discordUserId,
-						pillowType: obj.customMetadata?.pillowType,
-						userName: obj.customMetadata?.userName,
-					})
-				) || [];
+				list.objects?.map((obj: R2Object) => ({
+					key: obj.key,
+					pillowName: obj.customMetadata?.pillowName || '',
+					submittedAt: obj.customMetadata?.submittedAt || new Date(),
+					discordUserId: obj.customMetadata?.discordUserId || 0,
+					pillowType: obj.customMetadata?.pillowType || PillowType.NORMAL,
+					userName: obj.customMetadata?.userName || '',
+				})) || [];
 			return new Response(JSON.stringify(files), {
 				headers: { 'Content-Type': 'application/json' },
 			});
@@ -130,6 +125,28 @@ export default {
 			}
 		}
 
+		if (request.method === 'GET' && url.pathname.startsWith('/mod/')) {
+			const key = url.pathname.replace('/mod/', '');
+			try {
+				const id = env.MOD_ROLES.get(key);
+			} catch (err) {
+				return new Response('Failed to get Mod ID', { status: 500 });
+			}
+		}
+		if (request.method === 'POST' && url.pathname.startsWith('/mod/')) {
+			const key = url.pathname.replace('/mod/', '');
+			try {
+				const formData = await request.formData();
+				const roleId = formData.get('roleId');
+				if (roleId) {
+					await env.MOD_ROLES.put(key, roleId.toString());
+				} else {
+					return new Response('roleId is missing', { status: 400 });
+				}
+			} catch (err) {
+				return new Response('Failed to set Mod Role ID', { status: 500 });
+			}
+		}
 		return new Response('Not found', { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;
