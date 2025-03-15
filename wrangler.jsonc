@@ -19,12 +19,13 @@
 	"kv_namespaces": [
 	{
 	  "binding": "MOD_ROLES",
-	  "id": "fry-pillows"
+	  "id": "56ef6f18838a43fe9e6a1827a55a9995"
+	},
+	{
+		"binding": "API_KEYS",
+		"id": "e9600c87b8344ffe9196e77add3004bf"
 	}
-  	],
-	"vars": {
-		"SECRET_TOKEN": "nuh uh"
-	}
+  	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

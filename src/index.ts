@@ -15,14 +15,14 @@ enum PillowType {
 	BODY = 'BODY',
 }
 
-export function validateToken(request: Request, env: Env): boolean {
+export async function validateToken(request: Request, env: Env): Promise<boolean> {
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader) {
 		return false;
 	}
 
 	const token = authHeader.replace('Bearer ', '');
-	return token === env.SECRET_TOKEN;
+	return token === (await env.API_KEYS.get('pillow-api'));
 }
 
 export default {
