@@ -20,7 +20,7 @@ import {
 	handleGetSettings,
 	handleListImages,
 	handleUploadImage,
-	handleSetSettings,
+	handlePatchSettings,
 	handleGetPillowData,
 	handleGetImageData,
 } from './handlers';
@@ -93,8 +93,8 @@ export default {
 				switch (true) {
 					case method === 'GET':
 						return await handleGetSettings(env, pathParts[2]);
-					case method === 'POST':
-						return await handleSetSettings(request, env, pathParts[2]);
+					case method === 'PATCH':
+						return await handlePatchSettings(request, env, pathParts[2]);
 					default:
 						return new Response('Not found', { status: 404 });
 				}

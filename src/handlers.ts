@@ -173,11 +173,17 @@ export async function handleGetSettings(env: Env, id: string): Promise<Response>
 		headers: { 'Content-Type': 'application/json' },
 	});
 }
-export async function handleSetSettings(request: Request, env: Env, guildId: string): Promise<Response> {
+export async function handlePatchSettings(request: Request, env: Env, guildId: string): Promise<Response> {
 	try {
 		const formData = await request.formData();
-		const settings = JSON.parse(formData.get('settings') as string);
-		await env.FRY_SETTINGS.put(guildId, settings);
+		const newSettings = JSON.parse(formData.get('settings') as string);
+
+		// Fetch existing settings
+		const existingSettings = await env.FRY_SETTINGS.get(guildId);
+		const parsedSettings = existingSettings ? JSON.parse(existingSettings) : {};
+		const updatedSettings = { ...parsedSettings, ...newSettings };
+
+		await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
 		return new Response(JSON.stringify({ success: true }), {
 			headers: { 'Content-Type': 'application/json' },
 		});
