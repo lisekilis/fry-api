@@ -1,6 +1,6 @@
 export enum PillowType {
-	NORMAL = 'NORMAL',
 	BODY = 'BODY',
+	NORMAL = 'NORMAL',
 }
 
 export async function handleListPillows(env: Env): Promise<Response> {
@@ -19,7 +19,6 @@ export async function handleListPillows(env: Env): Promise<Response> {
 		headers: { 'Content-Type': 'application/json' },
 	});
 }
-
 export async function handleGetPillow(env: Env, pillowId: string): Promise<Response> {
 	const object = await env.FRY_PILLOWS.get(pillowId);
 	if (!object) {
@@ -30,7 +29,15 @@ export async function handleGetPillow(env: Env, pillowId: string): Promise<Respo
 		headers: { 'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream' },
 	});
 }
-
+export async function handleGetPillowData(env: Env, pillowId: string): Promise<Response> {
+	const object = await env.FRY_PILLOWS.get(pillowId);
+	if (!object) {
+		return new Response('Not found', { status: 404 });
+	}
+	return new Response(JSON.stringify(object.customMetadata), {
+		headers: { 'Content-Type': 'application/json' },
+	});
+}
 export async function handleUploadPillow(request: Request, env: Env): Promise<Response> {
 	try {
 		const formData = await request.formData();
@@ -71,7 +78,6 @@ export async function handleUploadPillow(request: Request, env: Env): Promise<Re
 		return new Response('Upload failed', { status: 500 });
 	}
 }
-
 export async function handleDeletePillow(env: Env, pillowId: string): Promise<Response> {
 	try {
 		await env.FRY_PILLOWS.delete(pillowId);
@@ -82,7 +88,6 @@ export async function handleDeletePillow(env: Env, pillowId: string): Promise<Re
 		return new Response('Delete failed', { status: 500 });
 	}
 }
-
 export async function handleListImages(env: Env): Promise<Response> {
 	const list = await env.FRY_PHOTOS.list();
 	const files =
@@ -105,6 +110,15 @@ export async function handleGetImage(env: Env, imageId: string): Promise<Respons
 	const body = await object.arrayBuffer();
 	return new Response(body, {
 		headers: { 'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream' },
+	});
+}
+export async function handleGetImageData(env: Env, imageId: string): Promise<Response> {
+	const object = await env.FRY_PHOTOS.get(imageId);
+	if (!object) {
+		return new Response('Not found', { status: 404 });
+	}
+	return new Response(JSON.stringify(object.customMetadata), {
+		headers: { 'Content-Type': 'application/json' },
 	});
 }
 export async function handleUploadImage(request: Request, env: Env): Promise<Response> {

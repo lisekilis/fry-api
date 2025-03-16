@@ -21,6 +21,8 @@ import {
 	handleListImages,
 	handleUploadImage,
 	handleSetSettings,
+	handleGetPillowData,
+	handleGetImageData,
 } from './handlers';
 
 export async function validateToken(request: Request, env: Env): Promise<boolean> {
@@ -52,7 +54,10 @@ export default {
 					case method === 'GET' && pathParts[1] === 'list':
 						return await handleListPillows(env);
 
-					case method === 'GET' && pathParts[1].startsWith('image/'):
+					case method === 'GET' && pathParts[1] === 'data':
+						return await handleGetPillowData(env, pathParts[2]);
+
+					case method === 'GET' && pathParts[1] === 'texture':
 						return await handleGetPillow(env, pathParts[2]);
 
 					case method === 'POST' && pathParts[1] === 'upload':
@@ -69,8 +74,11 @@ export default {
 					case method === 'GET' && pathParts[1] === 'list':
 						return await handleListImages(env);
 
-					case method === 'GET' && pathParts[1].startsWith('image/'):
+					case method === 'GET' && pathParts[1] === 'image':
 						return await handleGetImage(env, pathParts[2]);
+
+					case method === 'GET' && pathParts[1] === 'data':
+						return await handleGetImageData(env, pathParts[2]);
 
 					case method === 'POST' && pathParts[1] === 'upload':
 						return await handleUploadImage(request, env);
