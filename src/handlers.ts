@@ -1,4 +1,7 @@
-import { PillowType } from './types';
+export enum PillowType {
+	NORMAL = 'NORMAL',
+	BODY = 'BODY',
+}
 
 export async function handleListPillows(env: Env): Promise<Response> {
 	const list = await env.FRY_PILLOWS.list();
