@@ -83,9 +83,9 @@ export default {
 				}
 			case 'settings':
 				switch (true) {
-					case method === 'GET' && pathParts[1] === 'get':
+					case method === 'GET':
 						return await handleGetSettings(env, pathParts[2]);
-					case method === 'POST' && pathParts[1] === 'set':
+					case method === 'POST':
 						return await handleSetSettings(request, env, pathParts[2]);
 					default:
 						return new Response('Not found', { status: 404 });
