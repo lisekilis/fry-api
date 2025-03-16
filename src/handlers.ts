@@ -8,10 +8,11 @@ export async function handleListPillows(env: Env): Promise<Response> {
 	const files =
 		list.objects?.map((obj: R2Object) => ({
 			key: obj.key,
+			pillowType: obj.customMetadata?.pillowType || PillowType.NORMAL,
 			pillowName: obj.customMetadata?.pillowName || '',
 			submittedAt: obj.customMetadata?.submittedAt || new Date(),
+			discordApproverId: obj.customMetadata?.discordApproverId || 0,
 			discordUserId: obj.customMetadata?.discordUserId || 0,
-			pillowType: obj.customMetadata?.pillowType || PillowType.NORMAL,
 			userName: obj.customMetadata?.userName || '',
 		})) || [];
 	return new Response(JSON.stringify(files), {
@@ -35,6 +36,7 @@ export async function handleUploadPillow(request: Request, env: Env): Promise<Re
 		const formData = await request.formData();
 		const file = formData.get('file');
 		const discordUserId = formData.get('discordUserId') as string;
+		const discordApproverId = formData.get('discordApproverId') as string;
 		const pillowName = formData.get('pillowName') as string;
 		const submittedAt = (formData.get('submittedAt') as string) || new Date().toISOString();
 		const pillowType = formData.get('pillowType') as PillowType;
@@ -54,6 +56,7 @@ export async function handleUploadPillow(request: Request, env: Env): Promise<Re
 			},
 			customMetadata: {
 				discordUserId,
+				discordApproverId,
 				submittedAt,
 				pillowName,
 				pillowType,
