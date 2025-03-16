@@ -6,7 +6,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-13",
-	"name": "pillow-api",
+	"name": "fry-api",
 	"observability": {
 		"enabled": true
 	},
@@ -14,17 +14,21 @@
 		{
 			"binding": "FRY_PILLOWS",
 			"bucket_name": "fry-pillows"
+		},
+		{
+			"binding": "FRY_PHOTOS",
+			"bucket_name": "fry-photos"
 		}
 	],
 	"kv_namespaces": [
-	{
-	  "binding": "MOD_ROLES",
-	  "id": "56ef6f18838a43fe9e6a1827a55a9995"
-	},
-	{
-		"binding": "API_KEYS",
-		"id": "e9600c87b8344ffe9196e77add3004bf"
-	}
+		{
+			"binding": "FRY_SETTINGS",
+			"id": "bb2f9794bcd44d02912be163a6b116a7"
+		},
+		{
+			"binding": "API_TOKENS",
+			"id": "e9600c87b8344ffe9196e77add3004bf"
+		}
   	]
 	/**
 	 * Smart Placement
