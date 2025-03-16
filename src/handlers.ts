@@ -48,7 +48,6 @@ export async function handleUploadPillow(request: Request, env: Env): Promise<Re
 		const submittedAt = (formData.get('submittedAt') as string) || new Date().toISOString();
 		const pillowType = formData.get('pillowType') as PillowType;
 		const userName = formData.get('userName') as string;
-
 		if (!file || !(file instanceof File)) {
 			return new Response('File missing or invalid', { status: 400 });
 		}
@@ -184,7 +183,7 @@ export async function handlePatchSettings(request: Request, env: Env, guildId: s
 		const updatedSettings = { ...parsedSettings, ...newSettings };
 
 		await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
-		return new Response(JSON.stringify({ success: true }), {
+		return new Response(JSON.stringify({ updatedSettings }), {
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (err) {
