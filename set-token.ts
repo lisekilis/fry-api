@@ -8,5 +8,5 @@ if (!process.env.API_TOKEN) {
 }
 const wranglerContent = fs.readFileSync('./wrangler.jsonc', 'utf8');
 const wrangler = parse(wranglerContent);
-wrangler.env.API_TOKEN = process.env.API_TOKEN;
+wrangler.vars.API_TOKEN = process.env.API_TOKEN;
 fs.writeFileSync('./wrangler.json', JSON.stringify(wrangler, null, 2));
