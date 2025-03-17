@@ -45,5 +45,28 @@ describe('Hello World worker', () => {
 			const result = validateToken(request, env);
 			expect(result).toBe(true);
 		});
+		describe('validateToken', () => {
+			it('returns false if Authorization header is missing', async () => {
+				const request = new IncomingRequest('http://example.com');
+				const result = await validateToken(request, env);
+				expect(result).toBe(false);
+			});
+
+			it('returns false if token is incorrect', async () => {
+				const request = new IncomingRequest('http://example.com', {
+					headers: { Authorization: 'Bearer wrong-token' },
+				});
+				const result = await validateToken(request, env);
+				expect(result).toBe(false);
+			});
+
+			it('returns true if token is correct', async () => {
+				const request = new IncomingRequest('http://example.com', {
+					headers: { Authorization: `Bearer ${env.API_TOKEN}` },
+				});
+				const result = await validateToken(request, env);
+				expect(result).toBe(true);
+			});
+		});
 	});
 });
