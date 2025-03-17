@@ -32,7 +32,7 @@ export async function validateToken(request: Request, env: Env): Promise<boolean
 	}
 
 	const token = authHeader.replace('Bearer ', '');
-	return token === (await env.API_TOKENS.get('fry-api'));
+	return token === env.API_TOKEN;
 }
 
 export default {
