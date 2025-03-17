@@ -25,10 +25,7 @@
 			"binding": "FRY_SETTINGS",
 			"id": "bb2f9794bcd44d02912be163a6b116a7"
 		}
-  	],
-	"vars": {
-		"API_TOKEN": "your-api-token"
-	}
+  	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
