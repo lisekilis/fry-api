@@ -28,7 +28,7 @@ import {
 
 export async function validateToken(request: Request, env: Env): Promise<boolean> {
 	const authHeader = request.headers.get('Authorization');
-	if (!authHeader) {
+	if (!authHeader || !env.API_TOKEN) {
 		return false;
 	}
 
