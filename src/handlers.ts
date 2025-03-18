@@ -195,7 +195,7 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 	const signature = request.headers.get('x-signature-ed25519');
 	const timestamp = request.headers.get('x-signature-timestamp');
 	const body = await request.text();
-	if (!signature || !timestamp || !verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY)) {
+	if (!signature || !timestamp || !(await verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY))) {
 		return new Response('Bad request signature', { status: 401 });
 	}
 	const interaction = JSON.parse(body);
