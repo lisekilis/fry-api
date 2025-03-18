@@ -200,7 +200,7 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 	}
 	const interaction = JSON.parse(body);
 	if (interaction.type === InteractionType.PING) {
-		return new Response(JSON.stringify({ type: InteractionResponseType.PONG }));
+		return new Response(JSON.stringify({ type: 1 }), { status: 200 });
 	} // Handle other interaction types here
 	return new Response('Interaction not handled', { status: 400 });
 }
