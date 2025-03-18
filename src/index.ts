@@ -38,12 +38,11 @@ async function validateToken(request: Request, env: Env): Promise<boolean> {
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
-		console.log(url);
 		const path = url.pathname;
 		const method = request.method;
 		// Split the path into parts
 		const pathParts = path.split('/').filter(Boolean);
-		if (method === 'POST' && pathParts[1] === 'interactions') return handleDiscordInteractions(request, env);
+		if (method === 'POST' && pathParts[2] === 'interactions') return handleDiscordInteractions(request, env);
 
 		// Validate the token
 		if (!validateToken(request, env)) {
@@ -52,19 +51,19 @@ export default {
 		switch (pathParts[0]) {
 			case 'pillow':
 				switch (true) {
-					case method === 'GET' && pathParts[1] === 'list':
+					case method === 'GET' && pathParts[2] === 'list':
 						return await handleListPillows(env);
 
-					case method === 'GET' && pathParts[1] === 'data':
+					case method === 'GET' && pathParts[2] === 'data':
 						return await handleGetPillowData(env, pathParts[2]);
 
-					case method === 'GET' && pathParts[1] === 'texture':
+					case method === 'GET' && pathParts[2] === 'texture':
 						return await handleGetPillow(env, pathParts[2]);
 
-					case method === 'POST' && pathParts[1] === 'upload':
+					case method === 'POST' && pathParts[2] === 'upload':
 						return await handleUploadPillow(request, env);
 
-					case method === 'DELETE' && pathParts[1] === 'delete':
+					case method === 'DELETE' && pathParts[2] === 'delete':
 						return await handleDeletePillow(env, pathParts[2]);
 
 					default:
@@ -72,19 +71,19 @@ export default {
 				}
 			case 'photos':
 				switch (true) {
-					case method === 'GET' && pathParts[1] === 'list':
+					case method === 'GET' && pathParts[2] === 'list':
 						return await handleListImages(env);
 
-					case method === 'GET' && pathParts[1] === 'image':
-						return await handleGetImage(env, pathParts[2]);
+					case method === 'GET' && pathParts[2] === 'image':
+						return await handleGetImage(env, pathParts[3]);
 
-					case method === 'GET' && pathParts[1] === 'data':
-						return await handleGetImageData(env, pathParts[2]);
+					case method === 'GET' && pathParts[2] === 'data':
+						return await handleGetImageData(env, pathParts[3]);
 
-					case method === 'POST' && pathParts[1] === 'upload':
+					case method === 'POST' && pathParts[2] === 'upload':
 						return await handleUploadImage(request, env);
 
-					case method === 'DELETE' && pathParts[1] === 'delete':
+					case method === 'DELETE' && pathParts[2] === 'delete':
 						return await handleDeleteImage(env, pathParts[2]);
 
 					default:
