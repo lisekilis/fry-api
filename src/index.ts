@@ -38,6 +38,7 @@ async function validateToken(request: Request, env: Env): Promise<boolean> {
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
+		console.log(url);
 		const path = url.pathname;
 		const method = request.method;
 		// Split the path into parts
