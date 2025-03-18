@@ -1,3 +1,5 @@
+import { InteractionResponseType, InteractionType, verifyKey } from 'discord-interactions';
+
 export enum PillowType {
 	BODY = 'BODY',
 	NORMAL = 'NORMAL',
@@ -5,6 +7,7 @@ export enum PillowType {
 
 export async function handleListPillows(env: Env): Promise<Response> {
 	const list = await env.FRY_PILLOWS.list();
+
 	const files =
 		list.objects?.map((obj: R2Object) => ({
 			key: obj.key,
@@ -175,13 +178,10 @@ export async function handleGetSettings(env: Env, id: string): Promise<Response>
 export async function handlePatchSettings(request: Request, env: Env, guildId: string): Promise<Response> {
 	try {
 		const formData = await request.formData();
-		const newSettings = JSON.parse(formData.get('settings') as string);
-
-		// Fetch existing settings
+		const newSettings = JSON.parse(formData.get('settings') as string); // Fetch existing settings
 		const existingSettings = await env.FRY_SETTINGS.get(guildId);
 		const parsedSettings = existingSettings ? JSON.parse(existingSettings) : {};
 		const updatedSettings = { ...parsedSettings, ...newSettings };
-
 		await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
 		return new Response(JSON.stringify({ updatedSettings }), {
 			headers: { 'Content-Type': 'application/json' },
@@ -189,4 +189,20 @@ export async function handlePatchSettings(request: Request, env: Env, guildId: s
 	} catch (err) {
 		return new Response('Update failed', { status: 500 });
 	}
+}
+
+export async function handleDiscordInteractions(request: Request, env: Env): Promise<Response> {
+	const signature = request.headers.get('x-signature-ed25519');
+	const timestamp = request.headers.get('x-signature-timestamp');
+	const body = await request.text();
+	if (!signature || !timestamp || !verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY)) {
+		return new Response('Bad request signature', { status: 401 });
+	}
+	const interaction = JSON.parse(body);
+	if (interaction.type === InteractionType.PING) {
+		return new Response(JSON.stringify({ type: InteractionResponseType.PONG }), {
+			headers: { 'Content-Type': 'application/json' },
+		});
+	} // Handle other interaction types here
+	return new Response('Interaction not handled', { status: 400 });
 }

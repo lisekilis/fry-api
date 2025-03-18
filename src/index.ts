@@ -18,15 +18,14 @@ import {
 	handleUploadPillow,
 	handleDeleteImage,
 	handleGetImage,
-	handleGetSettings,
 	handleListImages,
 	handleUploadImage,
-	handlePatchSettings,
 	handleGetPillowData,
 	handleGetImageData,
+	handleDiscordInteractions,
 } from './handlers';
 
-export async function validateToken(request: Request, env: Env): Promise<boolean> {
+async function validateToken(request: Request, env: Env): Promise<boolean> {
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader || !env.API_TOKEN) {
 		return false;
@@ -38,17 +37,17 @@ export async function validateToken(request: Request, env: Env): Promise<boolean
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		// Validate the token
-		if (!validateToken(request, env)) {
-			return new Response('Unauthorized', { status: 401 });
-		}
-
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const method = request.method;
 		// Split the path into parts
 		const pathParts = path.split('/').filter(Boolean);
+		if (method === 'POST' && pathParts[1] === 'interactions') return handleDiscordInteractions(request, env);
 
+		// Validate the token
+		if (!validateToken(request, env)) {
+			return new Response('Unauthorized', { status: 401 });
+		}
 		switch (pathParts[0]) {
 			case 'pillow':
 				switch (true) {
@@ -90,15 +89,7 @@ export default {
 					default:
 						return new Response('Not found', { status: 404 });
 				}
-			case 'settings':
-				switch (true) {
-					case method === 'GET':
-						return await handleGetSettings(env, pathParts[2]);
-					case method === 'PATCH':
-						return await handlePatchSettings(request, env, pathParts[2]);
-					default:
-						return new Response('Not found', { status: 404 });
-				}
+
 			default:
 				return new Response('Not found', { status: 404 });
 		}
