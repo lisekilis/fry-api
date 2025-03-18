@@ -55,16 +55,16 @@ export default {
 						return await handleListPillows(env);
 
 					case method === 'GET' && pathParts[2] === 'data':
-						return await handleGetPillowData(env, pathParts[2]);
+						return await handleGetPillowData(env, pathParts[3]);
 
 					case method === 'GET' && pathParts[2] === 'texture':
-						return await handleGetPillow(env, pathParts[2]);
+						return await handleGetPillow(env, pathParts[3]);
 
 					case method === 'POST' && pathParts[2] === 'upload':
 						return await handleUploadPillow(request, env);
 
 					case method === 'DELETE' && pathParts[2] === 'delete':
-						return await handleDeletePillow(env, pathParts[2]);
+						return await handleDeletePillow(env, pathParts[3]);
 
 					default:
 						return new Response('Not found', { status: 404 });
@@ -84,7 +84,7 @@ export default {
 						return await handleUploadImage(request, env);
 
 					case method === 'DELETE' && pathParts[2] === 'delete':
-						return await handleDeleteImage(env, pathParts[2]);
+						return await handleDeleteImage(env, pathParts[3]);
 
 					default:
 						return new Response('Not found', { status: 404 });
