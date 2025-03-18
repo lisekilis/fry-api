@@ -42,8 +42,7 @@ export default {
 		const method = request.method;
 		// Split the path into parts
 		const pathParts = path.split('/').filter(Boolean);
-		if (method === 'POST' && pathParts[2] === 'interactions') return await handleDiscordInteractions(request, env);
-		console.log(pathParts);
+		if (method === 'POST' && pathParts[0] === 'interactions') return await handleDiscordInteractions(request, env);
 		// Validate the token
 		if (!validateToken(request, env)) {
 			return new Response('Unauthorized', { status: 401 });
@@ -51,40 +50,40 @@ export default {
 		switch (pathParts[0]) {
 			case 'pillow':
 				switch (true) {
-					case method === 'GET' && pathParts[2] === 'list':
+					case method === 'GET' && pathParts[1] === 'list':
 						return await handleListPillows(env);
 
-					case method === 'GET' && pathParts[2] === 'data':
-						return await handleGetPillowData(env, pathParts[3]);
+					case method === 'GET' && pathParts[1] === 'data':
+						return await handleGetPillowData(env, pathParts[2]);
 
-					case method === 'GET' && pathParts[2] === 'texture':
-						return await handleGetPillow(env, pathParts[3]);
+					case method === 'GET' && pathParts[1] === 'texture':
+						return await handleGetPillow(env, pathParts[2]);
 
-					case method === 'POST' && pathParts[2] === 'upload':
+					case method === 'POST' && pathParts[1] === 'upload':
 						return await handleUploadPillow(request, env);
 
-					case method === 'DELETE' && pathParts[2] === 'delete':
-						return await handleDeletePillow(env, pathParts[3]);
+					case method === 'DELETE' && pathParts[1] === 'delete':
+						return await handleDeletePillow(env, pathParts[2]);
 
 					default:
 						return new Response('Not found', { status: 404 });
 				}
 			case 'photos':
 				switch (true) {
-					case method === 'GET' && pathParts[2] === 'list':
+					case method === 'GET' && pathParts[1] === 'list':
 						return await handleListImages(env);
 
-					case method === 'GET' && pathParts[2] === 'image':
-						return await handleGetImage(env, pathParts[3]);
+					case method === 'GET' && pathParts[1] === 'image':
+						return await handleGetImage(env, pathParts[2]);
 
-					case method === 'GET' && pathParts[2] === 'data':
-						return await handleGetImageData(env, pathParts[3]);
+					case method === 'GET' && pathParts[1] === 'data':
+						return await handleGetImageData(env, pathParts[2]);
 
-					case method === 'POST' && pathParts[2] === 'upload':
+					case method === 'POST' && pathParts[1] === 'upload':
 						return await handleUploadImage(request, env);
 
-					case method === 'DELETE' && pathParts[2] === 'delete':
-						return await handleDeleteImage(env, pathParts[3]);
+					case method === 'DELETE' && pathParts[1] === 'delete':
+						return await handleDeleteImage(env, pathParts[2]);
 
 					default:
 						return new Response('Not found', { status: 404 });
