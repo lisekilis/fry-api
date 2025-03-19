@@ -18,54 +18,47 @@ const commands: Command[] = [
 		description: 'Configuration commands',
 		options: [
 			{
-				name: 'set',
+				name: 'channel',
 				type: ApplicationCommandOptionType.SubcommandGroup,
-				description: 'Change a setting',
+				description: 'Set a channel',
 				options: [
 					{
-						name: 'channel',
-						type: ApplicationCommandOptionType.SubcommandGroup,
-						description: 'Set a channel',
+						name: 'pillow',
+						type: ApplicationCommandOptionType.Subcommand,
+						description: 'Set the pillow submissions channel',
 						options: [
 							{
-								name: 'pillow',
-								type: ApplicationCommandOptionType.Subcommand,
-								description: 'Set the pillow submissions channel',
-								options: [
-									{
-										name: 'channel',
-										type: ApplicationCommandOptionType.Channel,
-										description: 'Channel to be used for pillow submissions',
-										required: true,
-									},
-								],
-							},
-							{
-								name: 'photo',
-								type: ApplicationCommandOptionType.Subcommand,
-								description: 'Set the Fry-Day group photo channel',
-								options: [
-									{
-										name: 'channel',
-										type: ApplicationCommandOptionType.Channel,
-										description: 'Channel to be used for pillow submissions',
-										required: true,
-									},
-								],
+								name: 'channel',
+								type: ApplicationCommandOptionType.Channel,
+								description: 'Channel to be used for pillow submissions',
+								required: true,
 							},
 						],
 					},
 					{
-						name: 'mod',
+						name: 'photo',
 						type: ApplicationCommandOptionType.Subcommand,
-						description: 'Set the image moderator role',
+						description: 'Set the Fry-Day group photo channel',
 						options: [
 							{
-								name: 'role',
-								type: ApplicationCommandOptionType.Role,
-								description: 'Role to be set as image moderator',
+								name: 'channel',
+								type: ApplicationCommandOptionType.Channel,
+								description: 'Channel to be used for pillow submissions',
+								required: true,
 							},
 						],
+					},
+				],
+			},
+			{
+				name: 'mod',
+				type: ApplicationCommandOptionType.Subcommand,
+				description: 'Set the image moderator role',
+				options: [
+					{
+						name: 'role',
+						type: ApplicationCommandOptionType.Role,
+						description: 'Role to be set as image moderator',
 					},
 				],
 			},
@@ -203,8 +196,9 @@ const commands: Command[] = [
 async function registerGlobalCommands() {
 	const url = `https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`;
 	console.log(`Registering commands to ${url}`);
-	console.log(`Using bot token: ${BOT_TOKEN}`);
 	try {
+		const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 		for (const command of commands) {
 			const response = await fetch(url, {
 				method: 'POST',
@@ -214,10 +208,13 @@ async function registerGlobalCommands() {
 				},
 				body: JSON.stringify(command),
 			});
-			if (response.status !== 200) {
+			if (response.status !== 200 && response.status !== 201) {
 				throw new Error(`Failed to register command: ${command.name}, Status: ${response.status}, response: ${await response.text()}`);
 			}
 			console.log(`Registered command: ${command.name}`);
+
+			// bruh moment rate limited
+			await delay(1000);
 		}
 	} catch (error) {
 		console.error('Error registering commands:', error);
