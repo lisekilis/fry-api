@@ -220,44 +220,64 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 }
 
 async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
-	switch (interaction.data.name) {
-		case 'ping':
-			return handlePingCommand(interaction);
-		case 'setmodrole':
-			return await handleSetModRole(interaction, env);
-		default:
-			return new Response('Command not handled', { status: 400 });
+	try {
+		console.log(`Processing command: ${interaction.data.name}`);
+
+		switch (interaction.data.name) {
+			case 'ping':
+				return handlePingCommand(interaction);
+			case 'setmodrole':
+				return await handleSetModRole(interaction, env);
+			default:
+				console.log(`Unknown command: ${interaction.data.name}`);
+				return messageResponse(`Command '${interaction.data.name}' not implemented yet.`, MessageFlags.Ephemeral);
+		}
+	} catch (error) {
+		console.error(`Error in handleApplicationCommand: ${error}`);
+		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 	}
 }
 
-// Add this new function to handle the ping command
+// Update the ping command handler
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	console.log('Handling ping command');
 	return messageResponse('🏓 Pong!');
 }
 
 async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
-	if (!interaction.guild_id || !interaction.member) {
-		return messageResponse('This command can only be used in a guild', MessageFlags.Ephemeral);
-	}
-
-	if (!interaction.member.permissions || !interaction.member.permissions.includes('ADMINISTRATOR')) {
-		return messageResponse('You do not have the required permissions to use this command', MessageFlags.Ephemeral);
-	}
-
-	const roleOption = interaction.data.options?.find((option) => option.name === 'role') as APIApplicationCommandInteractionDataStringOption;
-	if (!roleOption || typeof roleOption.value !== 'string') {
-		return messageResponse('The role provided is invalid', MessageFlags.Ephemeral);
-	}
-
-	const roleId = roleOption.value;
-
 	try {
-		await patchSettings(interaction.guild_id, { modRoleId: roleId }, env);
-		return messageResponse(`The role has been set as the image moderator role`, MessageFlags.Ephemeral);
+		if (!interaction.guild_id || !interaction.member) {
+			return messageResponse('This command can only be used in a guild', MessageFlags.Ephemeral);
+		}
+
+		if (!interaction.member.permissions || !interaction.member.permissions.includes('ADMINISTRATOR')) {
+			return messageResponse('You do not have the required permissions to use this command', MessageFlags.Ephemeral);
+		}
+
+		const roleOption = interaction.data.options?.find(
+			(option) => option.name === 'role'
+		) as APIApplicationCommandInteractionDataStringOption;
+		if (!roleOption || typeof roleOption.value !== 'string') {
+			return messageResponse('The role provided is invalid', MessageFlags.Ephemeral);
+		}
+
+		const roleId = roleOption.value;
+		console.log(`Setting mod role: ${roleId} for guild: ${interaction.guild_id}`);
+
+		// Use Promise.race to ensure we respond within the timeout
+		const timeout = new Promise<Response>((_, reject) => setTimeout(() => reject(new Error('Operation timed out')), 2500));
+
+		const settingsOperation = patchSettings(interaction.guild_id, { modRoleId: roleId }, env).then(() =>
+			messageResponse(`The role has been set as the image moderator role`, MessageFlags.Ephemeral)
+		);
+
+		return await Promise.race([settingsOperation, timeout]).catch((error) => {
+			console.error(`Failed to set the role: ${error}`);
+			return messageResponse('An error occurred while setting the role', MessageFlags.Ephemeral);
+		});
 	} catch (error) {
-		console.error(`Failed to set the role: ${error}`);
-		return messageResponse('An error occurred while setting the role', MessageFlags.Ephemeral);
+		console.error(`Error in handleSetModRole: ${error}`);
+		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 	}
 }
 
