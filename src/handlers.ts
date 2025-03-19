@@ -246,9 +246,7 @@ function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInter
 	const interactionTimestamp = getTimestamp(`${BigInt(interaction.id)}`); //1420070400000 - discord epoch
 	const responseTime = Date.now() - interactionTimestamp;
 
-	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms),
-		Responsetimestamp: ${interactionTimestamp}, Current timestamp: ${Date.now()}
-		${interaction.id}, ${interaction.token}`);
+	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms)`);
 }
 
 async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
