@@ -42,11 +42,7 @@ export default {
 		const method = request.method;
 		// Split the path into parts
 		const pathParts = path.split('/').filter(Boolean);
-		if (method === 'POST' && pathParts[0] === 'interactions') {
-			const res = await handleDiscordInteractions(request, env);
-			console.log(await res.text());
-			return res;
-		}
+		if (method === 'POST' && pathParts[0] === 'interactions') return await handleDiscordInteractions(request, env);
 		console.log(pathParts);
 		// Validate the token
 		if (!validateToken(request, env)) {
