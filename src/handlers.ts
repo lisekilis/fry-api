@@ -246,7 +246,8 @@ function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInter
 	const responseTime = Date.now() - interactionTimestamp;
 
 	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms),
-		Responsetimestamp: ${interactionTimestamp}, Current timestamp: ${Date.now()}`);
+		Responsetimestamp: ${interactionTimestamp}, Current timestamp: ${Date.now()}
+		${interaction.id}, ${interaction.token}`);
 }
 
 async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
@@ -255,7 +256,7 @@ async function handleSetModRole(interaction: APIChatInputApplicationCommandGuild
 			return messageResponse('This command can only be used in a guild', MessageFlags.Ephemeral);
 		}
 
-		if (!interaction.member.permissions || !interaction.member.permissions.includes('ADMINISTRATOR')) {
+		if (!interaction.member.permissions.includes('ADMINISTRATOR')) {
 			return messageResponse('You do not have the required permissions to use this command', MessageFlags.Ephemeral);
 		}
 
