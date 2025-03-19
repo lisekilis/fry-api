@@ -17,6 +17,9 @@ importers:
       discord-interactions:
         specifier: ^4.1.1
         version: 4.1.1
+      discord-snowflake:
+        specifier: ^2.0.0
+        version: 2.0.0
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
@@ -881,6 +884,10 @@ packages:
   discord-interactions@4.1.1:
     resolution: {integrity: sha512-dCrdJFSHQrEHXB8tk+LpIhAL7/+/UXCFDzooYmB6jj7b/zuhdbETpcZXLYQpSfcSRpF5wjmnu1XwuHlvdF1KpQ==}
     engines: {node: '>=18.4.0'}
+
+  discord-snowflake@2.0.0:
+    resolution: {integrity: sha512-MFWier0d78ajvk1lAXUCm7wbNnY2bD7/rqvtemuhoebkBBS9AnA0OwQI7SpYqiy/01GR1raLPTsIOwWCj8Pb+w==}
+    engines: {node: '>=18'}
 
   es-module-lexer@1.6.0:
     resolution: {integrity: sha512-qqnD1yMU6tk/jnaMosogGySTZP8YtUgAffA9nMN+E/rjxcfRQ6IEk7IiozUjgxKoFHBGjTLnrHB/YC45r/59EQ==}
@@ -1766,6 +1773,8 @@ snapshots:
   discord-api-types@0.37.119: {}
 
   discord-interactions@4.1.1: {}
+
+  discord-snowflake@2.0.0: {}
 
   es-module-lexer@1.6.0: {}
 

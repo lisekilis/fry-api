@@ -21,6 +21,7 @@
 		"@types/node": "^22.13.10",
 		"discord-api-types": "^0.37.119",
 		"discord-interactions": "^4.1.1",
+		"discord-snowflake": "^2.0.0",
 		"tsx": "^4.19.3"
 	}
 }

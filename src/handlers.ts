@@ -12,6 +12,7 @@ import {
 	APIApplicationCommandInteractionDataStringOption,
 	APIInteractionResponse,
 } from 'discord-api-types/v10';
+import { getTimestamp } from 'discord-snowflake';
 
 export async function handleListPillows(env: Env): Promise<Response> {
 	const list = await env.FRY_PILLOWS.list();
@@ -242,7 +243,7 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 // Update the ping command handler
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	// Calculate response time in ms
-	const interactionTimestamp = (Number(interaction.id) >> 22) + 1420070400000; //1420070400000 - discord epoch
+	const interactionTimestamp = getTimestamp(`${BigInt(interaction.id)}`); //1420070400000 - discord epoch
 	const responseTime = Date.now() - interactionTimestamp;
 
 	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms),
