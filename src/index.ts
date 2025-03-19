@@ -44,7 +44,7 @@ export default {
 		const pathParts = path.split('/').filter(Boolean);
 		if (method === 'POST' && pathParts[0] === 'interactions') {
 			const res = await handleDiscordInteractions(request, env);
-			console.log(JSON.stringify(res));
+			console.log(res.text());
 			return res;
 		}
 		console.log(pathParts);

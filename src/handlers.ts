@@ -10,6 +10,7 @@ import {
 	APIMessageComponentButtonInteraction,
 	MessageFlags,
 	APIApplicationCommandInteractionDataStringOption,
+	APIInteractionResponse,
 } from 'discord-api-types/v10';
 
 export async function handleListPillows(env: Env): Promise<Response> {
@@ -289,7 +290,7 @@ async function patchSettings(guildId: string, settings: any, env: Env): Promise<
 }
 
 function messageResponse(content: string, flags?: MessageFlags): Response {
-	const response = {
+	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			tts: false,
@@ -299,15 +300,18 @@ function messageResponse(content: string, flags?: MessageFlags): Response {
 			flags,
 		},
 	};
-	return new Response(JSON.stringify(response), { status: 200 });
+	return new Response(JSON.stringify(response), {
+		status: 200,
+		headers: { 'Content-Type': 'application/json' },
+	});
 }
 
 function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
 	switch (interaction.data.custom_id) {
 		case 'approve':
-			return new Response(JSON.stringify({ content: 'Button clicked', flags: 64 }), { status: 200 });
+			return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
 		case 'deny':
-			return new Response(JSON.stringify({ content: 'Button clicked', flags: 64 }), { status: 200 });
+			return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
 		default:
 			return new Response('Button interaction not handled', { status: 400 });
 	}
