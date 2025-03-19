@@ -242,7 +242,7 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 // Update the ping command handler
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	// Calculate response time in ms
-	const interactionTimestamp = new Date(Number(interaction.id) >> 22).getTime() + 1420070400000; //discord epoch
+	const interactionTimestamp = new Date(Number(interaction.id) + 1420070400000).getTime(); //1420070400000 - discord epoch
 	const now = new Date().getTime();
 	const responseTime = now - interactionTimestamp;
 
