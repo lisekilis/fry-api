@@ -224,14 +224,14 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 		case 'ping':
 			return handlePingCommand(interaction);
 		case 'setmodrole':
-			return handleSetModRole(interaction, env);
+			return await handleSetModRole(interaction, env);
 		default:
 			return new Response('Command not handled', { status: 400 });
 	}
 }
 
 // Add this new function to handle the ping command
-async function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Promise<Response> {
+function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	return messageResponse('🏓 Pong!');
 }
 
@@ -267,7 +267,7 @@ async function patchSettings(guildId: string, settings: any, env: Env): Promise<
 	await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
 }
 
-async function messageResponse(content: string, flags?: MessageFlags): Promise<Response> {
+function messageResponse(content: string, flags?: MessageFlags): Response {
 	const response = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
