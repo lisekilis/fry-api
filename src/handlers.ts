@@ -1,9 +1,16 @@
-import { InteractionResponseType, InteractionType, verifyKey } from 'discord-interactions';
-
-export enum PillowType {
-	BODY = 'BODY',
-	NORMAL = 'NORMAL',
-}
+import { verifyKey } from 'discord-interactions';
+import { PillowType } from './types';
+import {
+	APIBaseInteraction,
+	InteractionType,
+	InteractionResponseType,
+	APIApplicationCommandInteraction,
+	APIMessageComponentInteraction,
+	APIChatInputApplicationCommandGuildInteraction,
+	APIMessageComponentButtonInteraction,
+	MessageFlags,
+	APIApplicationCommandInteractionDataStringOption,
+} from 'discord-api-types/v10';
 
 export async function handleListPillows(env: Env): Promise<Response> {
 	const list = await env.FRY_PILLOWS.list();
@@ -198,9 +205,86 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 	if (!signature || !timestamp || !(await verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY))) {
 		return new Response('Bad request signature', { status: 401 });
 	}
-	const interaction = JSON.parse(body);
-	if (interaction.type === InteractionType.PING) {
-		return new Response(JSON.stringify({ type: 1 }), { status: 200 });
-	} // Handle other interaction types here
-	return new Response('Interaction not handled', { status: 400 });
+	const interaction = JSON.parse(body) as APIBaseInteraction<InteractionType, any>;
+
+	switch (interaction.type) {
+		case InteractionType.Ping:
+			return new Response(JSON.stringify({ type: InteractionResponseType.Pong }), { status: 200 });
+		case InteractionType.ApplicationCommand:
+			return handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env);
+		case InteractionType.MessageComponent:
+			return handleMessageComponent(interaction as APIMessageComponentInteraction);
+		default:
+			return new Response('Interaction not handled', { status: 400 });
+	}
+}
+
+async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	switch (interaction.data.name) {
+		case 'ping':
+			return handlePingCommand(interaction);
+		case 'setmodrole':
+			return handleSetModRole(interaction, env);
+		default:
+			return new Response('Command not handled', { status: 400 });
+	}
+}
+
+// Add this new function to handle the ping command
+async function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Promise<Response> {
+	return messageResponse('🏓 Pong!');
+}
+
+async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (!interaction.guild_id || !interaction.member) {
+		return messageResponse('This command can only be used in a guild', MessageFlags.Ephemeral);
+	}
+
+	if (!interaction.member.permissions || !interaction.member.permissions.includes('ADMINISTRATOR')) {
+		return messageResponse('You do not have the required permissions to use this command', MessageFlags.Ephemeral);
+	}
+
+	const roleOption = interaction.data.options?.find((option) => option.name === 'role') as APIApplicationCommandInteractionDataStringOption;
+	if (!roleOption || typeof roleOption.value !== 'string') {
+		return messageResponse('The role provided is invalid', MessageFlags.Ephemeral);
+	}
+
+	const roleId = roleOption.value;
+
+	try {
+		await patchSettings(interaction.guild_id, { modRoleId: roleId }, env);
+		return messageResponse(`The role has been set as the image moderator role`, MessageFlags.Ephemeral);
+	} catch (error) {
+		console.error(`Failed to set the role: ${error}`);
+		return messageResponse('An error occurred while setting the role', MessageFlags.Ephemeral);
+	}
+}
+
+async function patchSettings(guildId: string, settings: any, env: Env): Promise<void> {
+	const existingSettings = await env.FRY_SETTINGS.get(guildId);
+	const parsedSettings = existingSettings ? JSON.parse(existingSettings) : {};
+	const updatedSettings = { ...parsedSettings, ...settings };
+	await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
+}
+
+async function messageResponse(content: string, flags?: MessageFlags): Promise<Response> {
+	const response = {
+		type: InteractionResponseType.ChannelMessageWithSource,
+		data: {
+			content,
+			flags,
+		},
+	};
+	return new Response(JSON.stringify(response), { status: 200 });
+}
+
+function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
+	switch (interaction.data.custom_id) {
+		case 'approve':
+			return new Response(JSON.stringify({ content: 'Button clicked', flags: 64 }), { status: 200 });
+		case 'deny':
+			return new Response(JSON.stringify({ content: 'Button clicked', flags: 64 }), { status: 200 });
+		default:
+			return new Response('Button interaction not handled', { status: 400 });
+	}
 }
