@@ -202,7 +202,8 @@ const commands: Command[] = [
 
 async function registerGlobalCommands() {
 	const url = `https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`;
-
+	console.log(`Registering commands to ${url}`);
+	console.log(`Using bot token: ${BOT_TOKEN}`);
 	try {
 		for (const command of commands) {
 			const response = await fetch(url, {
