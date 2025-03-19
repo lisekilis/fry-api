@@ -211,7 +211,7 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 		case InteractionType.Ping:
 			return new Response(JSON.stringify({ type: InteractionResponseType.Pong }), { status: 200 });
 		case InteractionType.ApplicationCommand:
-			return handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env);
+			return await handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env);
 		case InteractionType.MessageComponent:
 			return handleMessageComponent(interaction as APIMessageComponentInteraction);
 		default:
