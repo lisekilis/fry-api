@@ -232,6 +232,7 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 
 // Add this new function to handle the ping command
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
+	console.log('Handling ping command');
 	return messageResponse('🏓 Pong!');
 }
 
