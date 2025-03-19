@@ -243,10 +243,10 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	// Calculate response time in ms
 	const interactionTimestamp = (Number(interaction.id) >> 22) + 1420070400000; //1420070400000 - discord epoch
-	const now = new Date().getTime();
-	const responseTime = now - interactionTimestamp;
+	const responseTime = Date.now() - interactionTimestamp;
 
-	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms)`);
+	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms),
+		Responsetimestamp: ${interactionTimestamp}, Current timestamp: ${Date.now()}`);
 }
 
 async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
