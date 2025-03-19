@@ -241,8 +241,12 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 
 // Update the ping command handler
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
-	console.log('Handling ping command');
-	return messageResponse('🏓 Pong!');
+	// Calculate response time in ms
+	const interactionTimestamp = new Date(Number(interaction.id) >> 22).getTime() + 1420070400000; //discord epoch
+	const now = new Date().getTime();
+	const responseTime = now - interactionTimestamp;
+
+	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms)`);
 }
 
 async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
