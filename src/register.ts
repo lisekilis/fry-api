@@ -1,9 +1,10 @@
 import { ApplicationCommandOptionType, ApplicationCommandType } from 'discord-api-types/v10';
-import { env } from 'process';
 import { Command, PillowType } from './types';
 
-const APPLICATION_ID = env.DISCORD_APP_ID;
-const BOT_TOKEN = env.DISCORD_API_TOKEN;
+// Get command-line arguments
+const args = process.argv.slice(2);
+const APPLICATION_ID = args[0];
+const BOT_TOKEN = args[1];
 
 const commands: Command[] = [
 	{
@@ -212,10 +213,14 @@ async function registerGlobalCommands() {
 				},
 				body: JSON.stringify(command),
 			});
-			console.log(`Registered command: ${command.name}`, response);
+			if (response.status !== 200) {
+				throw new Error(`Failed to register command: ${command.name}, Status: ${response.status}, response: ${await response.text()}`);
+			}
+			console.log(`Registered command: ${command.name}`);
 		}
 	} catch (error) {
 		console.error('Error registering commands:', error);
+		process.exit(1); // Exit the process with a failure code
 	}
 }
 
