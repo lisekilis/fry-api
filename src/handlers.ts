@@ -407,7 +407,7 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 						interaction.data.options[0].options?.find((option) => option.name === 'username')?.value ?? interaction.member.user.username
 					}'s Pillow Submission`,
 					image: {
-						url: interaction.data.options[0].options?.find((option) => option.name === 'texture')?.value as string,
+						url: interaction.data.options[0].options?.find((option) => option.value === 'texture')?.value as string,
 					},
 					fields: [
 						{
@@ -423,7 +423,7 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 					],
 					footer: {
 						text: `Submitted by ${interaction.member.user.username}`,
-						icon_url: interaction.member.user.avatar,
+						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
 					},
 				},
 				'Pillow submission received!',
