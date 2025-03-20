@@ -387,6 +387,9 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 	const parsedSettings = settings ? JSON.parse(settings) : {};
+	if (!parsedSettings.pillowChannelId) return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
+	if (interaction.channel.id !== parsedSettings.pillowChannelId)
+		return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
 	switch (interaction.data.options[0].name) {
 		case 'pillow':
 			return messageResponse('Not implemented yet! (if ever)', MessageFlags.Ephemeral);
@@ -395,10 +398,7 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 		default:
 			break;
 	}
-
-	if (!parsedSettings.pillowChannelId) return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
-	if (interaction.channel.id !== parsedSettings.pillowChannelId)
-		return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
+	return messageResponse('I have no idea how you got here', MessageFlags.Ephemeral);
 }
 function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
 	switch (interaction.data.custom_id) {
