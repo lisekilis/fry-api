@@ -271,7 +271,7 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 	try {
 		switch (interaction.data.options[0].name) {
 			case 'mod':
-				if (!interaction.data.options[0].options) {
+				if (!interaction.data.options[0].options?.find((option) => option.name === 'role')) {
 					// Show current mod role (if any)
 					const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 					const parsedSettings = settings ? JSON.parse(settings) : {};
@@ -302,8 +302,7 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 
 				switch (interaction.data.options[0].options[0].name) {
 					case 'pillow':
-						if (!interaction.data.options[0].options[0].options) {
-							// Show current pillow channel (if any)
+						if (!interaction.data.options[0].options[0].options?.find((option) => option.name === 'channel')) {
 							const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 							const parsedSettings = settings ? JSON.parse(settings) : {};
 							if (parsedSettings.pillowChannelId) {
@@ -323,7 +322,7 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 						return messageResponse('Pillow channel set successfully', MessageFlags.Ephemeral);
 
 					case 'photo':
-						if (!interaction.data.options[0].options[0].options) {
+						if (!interaction.data.options[0].options[0].options?.find((option) => option.name === 'channel')) {
 							// Show current photo channel (if any)
 							const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 							const parsedSettings = settings ? JSON.parse(settings) : {};
