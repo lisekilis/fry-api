@@ -267,6 +267,14 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 	}
 	switch (interaction.data.options?.[0].name) {
 		case 'mod':
+			if (!interaction.data.options?.[0].options) {
+				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+				const parsedSettings = settings ? JSON.parse(settings) : {};
+				if (parsedSettings.modRoleId) {
+					return messageResponse(`Current mod role: ${parsedSettings.modRoleId}`, MessageFlags.Ephemeral);
+				}
+				return messageResponse('No mod role set', MessageFlags.Ephemeral);
+			}
 			try {
 				const roleOption = interaction.data.options?.[0].options?.find(
 					(option) => option.name === 'role'
@@ -284,6 +292,14 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 			}
 			switch (interaction.data.options?.[0].options?.[0].name) {
 				case 'pillow':
+					if (!interaction.data.options?.[0].options?.[0].options) {
+						const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+						const parsedSettings = settings ? JSON.parse(settings) : {};
+						if (parsedSettings.pillowChannelId) {
+							return messageResponse(`Current pillow channel: ${parsedSettings.pillowChannelId}`, MessageFlags.Ephemeral);
+						}
+						return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
+					}
 					try {
 						const channelOption = interaction.data.options?.[0].options?.[0].options?.find(
 							(option) => option.name === 'channel'
@@ -296,6 +312,14 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 						return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 					}
 				case 'photo':
+					if (!interaction.data.options?.[0].options?.[0].options) {
+						const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+						const parsedSettings = settings ? JSON.parse(settings) : {};
+						if (parsedSettings.photoChannelId) {
+							return messageResponse(`Current photo channel: ${parsedSettings.photoChannelId}`, MessageFlags.Ephemeral);
+						}
+						return messageResponse('No photo channel set', MessageFlags.Ephemeral);
+					}
 					try {
 						const channelOption = interaction.data.options?.[0].options?.[0].options?.find(
 							(option) => option.name === 'channel'
