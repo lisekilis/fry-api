@@ -11,6 +11,7 @@ import {
 	MessageFlags,
 	APIApplicationCommandInteractionDataStringOption,
 	APIInteractionResponse,
+	ApplicationCommandOptionType,
 } from 'discord-api-types/v10';
 import { getTimestamp } from 'discord-snowflake';
 
@@ -188,18 +189,21 @@ export async function handlePatchSettings(request: Request, env: Env, guildId: s
 	try {
 		const formData = await request.formData();
 		const newSettings = JSON.parse(formData.get('settings') as string); // Fetch existing settings
-		const existingSettings = await env.FRY_SETTINGS.get(guildId);
-		const parsedSettings = existingSettings ? JSON.parse(existingSettings) : {};
-		const updatedSettings = { ...parsedSettings, ...newSettings };
-		await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
-		return new Response(JSON.stringify({ updatedSettings }), {
+		await patchSettings(guildId, newSettings, env);
+		return new Response(JSON.stringify({ success: true }), {
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (err) {
 		return new Response('Update failed', { status: 500 });
 	}
 }
-
+async function patchSettings(guildId: string, settings: any, env: Env): Promise<void> {
+	const existingSettings = await env.FRY_SETTINGS.get(guildId);
+	const parsedSettings = existingSettings ? JSON.parse(existingSettings) : {};
+	const updatedSettings = { ...parsedSettings, ...settings };
+	await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
+}
+// Discord interactions
 export async function handleDiscordInteractions(request: Request, env: Env): Promise<Response> {
 	const signature = request.headers.get('x-signature-ed25519');
 	const timestamp = request.headers.get('x-signature-timestamp');
@@ -220,79 +224,6 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 			return new Response('Interaction not handled', { status: 400 });
 	}
 }
-
-async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
-	try {
-		console.log(`Processing command: ${interaction.data.name}`);
-
-		switch (interaction.data.name) {
-			case 'ping':
-				return handlePingCommand(interaction);
-			case 'setmodrole':
-				return await handleSetModRole(interaction, env);
-			default:
-				console.log(`Unknown command: ${interaction.data.name}`);
-				return messageResponse(`Command '${interaction.data.name}' not implemented yet.`, MessageFlags.Ephemeral);
-		}
-	} catch (error) {
-		console.error(`Error in handleApplicationCommand: ${error}`);
-		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
-	}
-}
-
-// Update the ping command handler
-function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
-	// Calculate response time in ms
-	const interactionTimestamp = getTimestamp(`${BigInt(interaction.id)}`); //1420070400000 - discord epoch
-	const responseTime = Date.now() - interactionTimestamp;
-
-	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms)`);
-}
-
-async function handleSetModRole(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
-	try {
-		if (!interaction.guild_id || !interaction.member) {
-			return messageResponse('This command can only be used in a guild', MessageFlags.Ephemeral);
-		}
-
-		if (!interaction.member.permissions.includes('ADMINISTRATOR')) {
-			return messageResponse('You do not have the required permissions to use this command', MessageFlags.Ephemeral);
-		}
-
-		const roleOption = interaction.data.options?.find(
-			(option) => option.name === 'role'
-		) as APIApplicationCommandInteractionDataStringOption;
-		if (!roleOption || typeof roleOption.value !== 'string') {
-			return messageResponse('The role provided is invalid', MessageFlags.Ephemeral);
-		}
-
-		const roleId = roleOption.value;
-		console.log(`Setting mod role: ${roleId} for guild: ${interaction.guild_id}`);
-
-		// Use Promise.race to ensure we respond within the timeout
-		const timeout = new Promise<Response>((_, reject) => setTimeout(() => reject(new Error('Operation timed out')), 2500));
-
-		const settingsOperation = patchSettings(interaction.guild_id, { modRoleId: roleId }, env).then(() =>
-			messageResponse(`The role has been set as the image moderator role`, MessageFlags.Ephemeral)
-		);
-
-		return await Promise.race([settingsOperation, timeout]).catch((error) => {
-			console.error(`Failed to set the role: ${error}`);
-			return messageResponse('An error occurred while setting the role', MessageFlags.Ephemeral);
-		});
-	} catch (error) {
-		console.error(`Error in handleSetModRole: ${error}`);
-		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
-	}
-}
-
-async function patchSettings(guildId: string, settings: any, env: Env): Promise<void> {
-	const existingSettings = await env.FRY_SETTINGS.get(guildId);
-	const parsedSettings = existingSettings ? JSON.parse(existingSettings) : {};
-	const updatedSettings = { ...parsedSettings, ...settings };
-	await env.FRY_SETTINGS.put(guildId, JSON.stringify(updatedSettings));
-}
-
 function messageResponse(content: string, flags?: MessageFlags): Response {
 	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
@@ -309,7 +240,85 @@ function messageResponse(content: string, flags?: MessageFlags): Response {
 		headers: { 'Content-Type': 'application/json' },
 	});
 }
+async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	try {
+		console.log(`Processing command: ${interaction.data.name}`);
 
+		switch (interaction.data.name) {
+			case 'ping':
+				return handlePingCommand(interaction);
+			case 'config':
+				return await handleConfigCommand(interaction, env);
+			default:
+				console.log(`Unknown command: ${interaction.data.name}`);
+				return messageResponse(`Command '${interaction.data.name}' not implemented yet.`, MessageFlags.Ephemeral);
+		}
+	} catch (error) {
+		console.error(`Error in handleApplicationCommand: ${error}`);
+		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
+	}
+}
+async function handleConfigCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (
+		interaction.data.options?.[0].type != ApplicationCommandOptionType.Subcommand &&
+		interaction.data.options?.[0].type != ApplicationCommandOptionType.SubcommandGroup
+	) {
+		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+	}
+	switch (interaction.data.options?.[0].name) {
+		case 'mod':
+			try {
+				const roleOption = interaction.data.options?.[0].options?.find(
+					(option) => option.name === 'role'
+				) as APIApplicationCommandInteractionDataStringOption;
+				patchSettings(interaction.guild_id, { modRoleId: roleOption.value }, env);
+				console.log(`Setting mod role: ${roleOption.value} for guild: ${interaction.guild_id}`);
+				return messageResponse('Mod role set successfully', MessageFlags.Ephemeral);
+			} catch (error) {
+				console.error(`Error in handleConfigCommand: ${error}`);
+				return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
+			}
+		case 'channel':
+			if (interaction.data.options?.[0].options?.[0].type != ApplicationCommandOptionType.Subcommand) {
+				break;
+			}
+			switch (interaction.data.options?.[0].options?.[0].name) {
+				case 'pillow':
+					try {
+						const channelOption = interaction.data.options?.[0].options?.[0].options?.find(
+							(option) => option.name === 'channel'
+						) as APIApplicationCommandInteractionDataStringOption;
+						patchSettings(interaction.guild_id, { pillowChannelId: channelOption.value }, env);
+						console.log(`Setting pillow channel: ${channelOption.value} for guild: ${interaction.guild_id}`);
+						return messageResponse('Pillow channel set successfully', MessageFlags.Ephemeral);
+					} catch (error) {
+						console.error(`Error in handleConfigCommand: ${error}`);
+						return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
+					}
+				case 'photo':
+					try {
+						const channelOption = interaction.data.options?.[0].options?.[0].options?.find(
+							(option) => option.name === 'channel'
+						) as APIApplicationCommandInteractionDataStringOption;
+						patchSettings(interaction.guild_id, { photoChannelId: channelOption.value }, env);
+						console.log(`Setting photo channel: ${channelOption.value} for guild: ${interaction.guild_id}`);
+						return messageResponse('Photo channel set successfully', MessageFlags.Ephemeral);
+					} catch (error) {
+						console.error(`Error in handleConfigCommand: ${error}`);
+						return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
+					}
+			}
+		default:
+			return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+	}
+}
+function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
+	// Calculate response time in ms
+	const interactionTimestamp = getTimestamp(`${BigInt(interaction.id)}`); //1420070400000 - discord epoch
+	const responseTime = Date.now() - interactionTimestamp;
+
+	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms)`);
+}
 function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
 	switch (interaction.data.custom_id) {
 		case 'approve':

@@ -193,9 +193,37 @@ const commands: Command[] = [
 	},
 ];
 
+async function deleteAllCommands() {
+	const url = `https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`;
+	console.log(`Removing all existing commands from ${url}`);
+
+	try {
+		const response = await fetch(url, {
+			method: 'PUT', // PUT with empty array overwrites all commands
+			headers: {
+				Authorization: `Bot ${BOT_TOKEN}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify([]), // Empty array to replace all commands
+		});
+
+		if (response.ok) {
+			console.log('Successfully cleared all existing commands');
+		} else {
+			console.error(`Failed to clear commands: Status: ${response.status}, response: ${await response.text()}`);
+		}
+	} catch (error) {
+		console.error('Error clearing commands:', error);
+	}
+}
+
 async function registerGlobalCommands() {
+	// First, delete all existing commands
+	await deleteAllCommands();
+
 	const url = `https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`;
 	console.log(`Registering commands to ${url}`);
+
 	try {
 		const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
