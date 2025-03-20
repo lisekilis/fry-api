@@ -267,7 +267,6 @@ function embedResponse(
 			{
 				id: '0',
 				filename: attachment.filename,
-				description: 'Pillow texture submission',
 			},
 		];
 	}
@@ -288,7 +287,7 @@ function embedResponse(
 
 	return new Response(JSON.stringify(response), {
 		status: 200,
-		headers: { 'Content-Type': 'application/json' },
+		headers: { 'Content-Type': 'multipart/form-data' },
 	});
 }
 async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
