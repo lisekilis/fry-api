@@ -15,6 +15,7 @@ import {
 	APIActionRowComponent,
 	APIMessageActionRowComponent,
 	APIEmbed,
+	APIInteractionResponseChannelMessageWithSource,
 } from 'discord-api-types/v10';
 import { getTimestamp } from 'discord-snowflake';
 
@@ -250,7 +251,7 @@ function embedResponse(
 	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
 	attachment?: { data: ArrayBuffer; filename: string; contentType: string }
 ): Response {
-	const response: APIInteractionResponse = {
+	const response: APIInteractionResponseChannelMessageWithSource = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			tts: false,
@@ -270,7 +271,6 @@ function embedResponse(
 			},
 		];
 	}
-
 	const responseBody = attachment ? new FormData() : undefined;
 
 	if (responseBody && attachment) {
@@ -464,6 +464,9 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 				return embedResponse(
 					{
 						title: `${userName}'s Pillow Submission`,
+						thumbnail: {
+							url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+						},
 						image: {
 							url: `attachment://${interaction.member.user.id}_${pillowType}.png`,
 						},
@@ -479,10 +482,6 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 								inline: true,
 							},
 						],
-						footer: {
-							text: `Submitted by ${interaction.member.user.username}`,
-							icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-						},
 					},
 					'Pillow submission received and stored!',
 					undefined,
