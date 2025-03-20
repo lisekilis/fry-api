@@ -289,7 +289,7 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 
 				await patchSettings(interaction.guild_id, { modRoleId: roleOption.value }, env);
 				console.log(`Setting mod role: ${roleOption.value} for guild: ${interaction.guild_id}`);
-				return messageResponse('Mod role set successfully', MessageFlags.Ephemeral);
+				return messageResponse(`Succesfully set <@${roleOption.value}> as the image moderator.`, MessageFlags.Ephemeral);
 
 			case 'channel':
 				// Validate channel subcommand exists
@@ -319,7 +319,10 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 
 						await patchSettings(interaction.guild_id, { pillowChannelId: pillowChannelOption.value }, env);
 						console.log(`Setting pillow channel: ${pillowChannelOption.value} for guild: ${interaction.guild_id}`);
-						return messageResponse('Pillow channel set successfully', MessageFlags.Ephemeral);
+						return messageResponse(
+							`Succesfully set <#${pillowChannelOption.value}> as the pillow submissions channel.`,
+							MessageFlags.Ephemeral
+						);
 
 					case 'photo':
 						if (!interaction.data.options[0].options[0].options?.find((option) => option.name === 'channel')) {
@@ -340,7 +343,7 @@ async function handleConfigCommand(interaction: APIChatInputApplicationCommandGu
 
 						await patchSettings(interaction.guild_id, { photoChannelId: photoChannelOption.value }, env);
 						console.log(`Setting photo channel: ${photoChannelOption.value} for guild: ${interaction.guild_id}`);
-						return messageResponse('Photo channel set successfully', MessageFlags.Ephemeral);
+						return messageResponse(`Succesfully set <#${photoChannelOption.value}> as the group photo channel.`, MessageFlags.Ephemeral);
 
 					default:
 						return messageResponse('Unknown channel subcommand', MessageFlags.Ephemeral);
