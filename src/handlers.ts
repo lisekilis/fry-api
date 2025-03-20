@@ -259,81 +259,100 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 	}
 }
 async function handleConfigCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	// Validate the interaction has proper options structure
 	if (
-		interaction.data.options?.[0].type != ApplicationCommandOptionType.Subcommand &&
-		interaction.data.options?.[0].type != ApplicationCommandOptionType.SubcommandGroup
+		!interaction.data.options?.[0] ||
+		(interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand &&
+			interaction.data.options[0].type !== ApplicationCommandOptionType.SubcommandGroup)
 	) {
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 	}
-	switch (interaction.data.options?.[0].name) {
-		case 'mod':
-			if (!interaction.data.options?.[0].options) {
-				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
-				const parsedSettings = settings ? JSON.parse(settings) : {};
-				if (parsedSettings.modRoleId) {
-					return messageResponse(`Current mod role: ${parsedSettings.modRoleId}`, MessageFlags.Ephemeral);
+
+	try {
+		switch (interaction.data.options[0].name) {
+			case 'mod':
+				if (!interaction.data.options[0].options) {
+					// Show current mod role (if any)
+					const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+					const parsedSettings = settings ? JSON.parse(settings) : {};
+					if (parsedSettings.modRoleId) {
+						return messageResponse(`Current mod role: <@&${parsedSettings.modRoleId}>`, MessageFlags.Ephemeral);
+					}
+					return messageResponse('No mod role set', MessageFlags.Ephemeral);
 				}
-				return messageResponse('No mod role set', MessageFlags.Ephemeral);
-			}
-			try {
-				const roleOption = interaction.data.options?.[0].options?.find(
-					(option) => option.name === 'role'
-				) as APIApplicationCommandInteractionDataStringOption;
-				patchSettings(interaction.guild_id, { modRoleId: roleOption.value }, env);
+
+				// Set new mod role
+				const roleOption = interaction.data.options[0].options.find((option) => option.name === 'role');
+				if (!roleOption || roleOption.type !== ApplicationCommandOptionType.Role || typeof roleOption.value !== 'string') {
+					return messageResponse('Invalid role provided', MessageFlags.Ephemeral);
+				}
+
+				await patchSettings(interaction.guild_id, { modRoleId: roleOption.value }, env);
 				console.log(`Setting mod role: ${roleOption.value} for guild: ${interaction.guild_id}`);
 				return messageResponse('Mod role set successfully', MessageFlags.Ephemeral);
-			} catch (error) {
-				console.error(`Error in handleConfigCommand: ${error}`);
-				return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
-			}
-		case 'channel':
-			if (interaction.data.options?.[0].options?.[0].type != ApplicationCommandOptionType.Subcommand) {
-				break;
-			}
-			switch (interaction.data.options?.[0].options?.[0].name) {
-				case 'pillow':
-					if (!interaction.data.options?.[0].options?.[0].options) {
-						const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
-						const parsedSettings = settings ? JSON.parse(settings) : {};
-						if (parsedSettings.pillowChannelId) {
-							return messageResponse(`Current pillow channel: ${parsedSettings.pillowChannelId}`, MessageFlags.Ephemeral);
+
+			case 'channel':
+				// Validate channel subcommand exists
+				if (
+					!interaction.data.options[0].options?.[0] ||
+					interaction.data.options[0].options[0].type !== ApplicationCommandOptionType.Subcommand
+				) {
+					return messageResponse('Please provide a valid channel subcommand', MessageFlags.Ephemeral);
+				}
+
+				switch (interaction.data.options[0].options[0].name) {
+					case 'pillow':
+						if (!interaction.data.options[0].options[0].options) {
+							// Show current pillow channel (if any)
+							const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+							const parsedSettings = settings ? JSON.parse(settings) : {};
+							if (parsedSettings.pillowChannelId) {
+								return messageResponse(`Current pillow channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
+							}
+							return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
 						}
-						return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
-					}
-					try {
-						const channelOption = interaction.data.options?.[0].options?.[0].options?.find(
-							(option) => option.name === 'channel'
-						) as APIApplicationCommandInteractionDataStringOption;
-						patchSettings(interaction.guild_id, { pillowChannelId: channelOption.value }, env);
-						console.log(`Setting pillow channel: ${channelOption.value} for guild: ${interaction.guild_id}`);
+
+						// Set new pillow channel
+						const pillowChannelOption = interaction.data.options[0].options[0].options.find((option) => option.name === 'channel');
+						if (!pillowChannelOption || typeof pillowChannelOption.value !== 'string') {
+							return messageResponse('Invalid channel provided', MessageFlags.Ephemeral);
+						}
+
+						await patchSettings(interaction.guild_id, { pillowChannelId: pillowChannelOption.value }, env);
+						console.log(`Setting pillow channel: ${pillowChannelOption.value} for guild: ${interaction.guild_id}`);
 						return messageResponse('Pillow channel set successfully', MessageFlags.Ephemeral);
-					} catch (error) {
-						console.error(`Error in handleConfigCommand: ${error}`);
-						return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
-					}
-				case 'photo':
-					if (!interaction.data.options?.[0].options?.[0].options) {
-						const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
-						const parsedSettings = settings ? JSON.parse(settings) : {};
-						if (parsedSettings.photoChannelId) {
-							return messageResponse(`Current photo channel: ${parsedSettings.photoChannelId}`, MessageFlags.Ephemeral);
+
+					case 'photo':
+						if (!interaction.data.options[0].options[0].options) {
+							// Show current photo channel (if any)
+							const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+							const parsedSettings = settings ? JSON.parse(settings) : {};
+							if (parsedSettings.photoChannelId) {
+								return messageResponse(`Current photo channel: <#${parsedSettings.photoChannelId}>`, MessageFlags.Ephemeral);
+							}
+							return messageResponse('No photo channel set', MessageFlags.Ephemeral);
 						}
-						return messageResponse('No photo channel set', MessageFlags.Ephemeral);
-					}
-					try {
-						const channelOption = interaction.data.options?.[0].options?.[0].options?.find(
-							(option) => option.name === 'channel'
-						) as APIApplicationCommandInteractionDataStringOption;
-						patchSettings(interaction.guild_id, { photoChannelId: channelOption.value }, env);
-						console.log(`Setting photo channel: ${channelOption.value} for guild: ${interaction.guild_id}`);
+
+						// Set new photo channel
+						const photoChannelOption = interaction.data.options[0].options[0].options.find((option) => option.name === 'channel');
+						if (!photoChannelOption || typeof photoChannelOption.value !== 'string') {
+							return messageResponse('Invalid channel provided', MessageFlags.Ephemeral);
+						}
+
+						await patchSettings(interaction.guild_id, { photoChannelId: photoChannelOption.value }, env);
+						console.log(`Setting photo channel: ${photoChannelOption.value} for guild: ${interaction.guild_id}`);
 						return messageResponse('Photo channel set successfully', MessageFlags.Ephemeral);
-					} catch (error) {
-						console.error(`Error in handleConfigCommand: ${error}`);
-						return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
-					}
-			}
-		default:
-			return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+
+					default:
+						return messageResponse('Unknown channel subcommand', MessageFlags.Ephemeral);
+				}
+
+			default:
+				return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
+		}
+	} catch (error) {
+		console.error(`Error in handleConfigCommand: ${error}`);
+		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 	}
 }
 function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
