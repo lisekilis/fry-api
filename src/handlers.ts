@@ -274,18 +274,10 @@ function embedResponse(
 	const responseBody = attachment ? new FormData() : undefined;
 
 	if (responseBody && attachment) {
-		// Add the JSON part
-		const blob = new Blob([JSON.stringify(response)], { type: 'application/json' });
-		responseBody.append('payload_json', blob);
-
-		// Add the file part
+		responseBody.append('payload_json', JSON.stringify(response));
 		const file = new Blob([attachment.data], { type: attachment.contentType });
 		responseBody.append('files[0]', file, attachment.filename);
-
-		return new Response(responseBody, {
-			status: 200,
-			headers: { 'Content-Type': 'multipart/form-data' },
-		});
+		return new Response(responseBody);
 	}
 
 	return new Response(JSON.stringify(response), {
