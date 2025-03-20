@@ -247,8 +247,29 @@ function embedResponse(
 	embed: APIEmbed,
 	content?: string,
 	flags?: MessageFlags,
-	components?: APIActionRowComponent<APIMessageActionRowComponent>[]
+	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
+	attachment?: { url: string; filename: string }
 ): Response {
+	if (attachment) {
+		// If we have an attachment, we need to send a deferred response
+		// and then use a followup message with the attachment
+		const response: APIInteractionResponse = {
+			type: InteractionResponseType.DeferredChannelMessageWithSource,
+			data: {
+				flags,
+			},
+		};
+
+		// Here you would schedule a followup with the attachment
+		// This requires using Discord's REST API directly
+
+		return new Response(JSON.stringify(response), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' },
+		});
+	}
+
+	// Regular response without attachment
 	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
@@ -260,6 +281,7 @@ function embedResponse(
 			components,
 		},
 	};
+
 	return new Response(JSON.stringify(response), {
 		status: 200,
 		headers: { 'Content-Type': 'application/json' },
@@ -394,30 +416,45 @@ function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInter
 async function handleSubmissions(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+
 	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 	const parsedSettings = settings ? JSON.parse(settings) : {};
-	if (!parsedSettings.pillowChannelId) return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
-	if (interaction.channel.id !== parsedSettings.pillowChannelId)
-		return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
+
 	switch (interaction.data.options[0].name) {
 		case 'pillow':
+			if (!parsedSettings.pillowChannelId) return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
+			if (interaction.channel.id !== parsedSettings.pillowChannelId)
+				return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
+			const fileOption = interaction.data.options[0].options?.find((option) => option.name === 'texture');
+
+			if (!fileOption || fileOption.type !== ApplicationCommandOptionType.Attachment) {
+				return messageResponse('Please attach a pillow image', MessageFlags.Ephemeral);
+			}
+			const attachmentId = fileOption.value;
+			const attachment = interaction.data.resolved?.attachments?.[attachmentId];
+			if (!attachment) {
+				return messageResponse('Could not find the attached image', MessageFlags.Ephemeral);
+			}
+			if (attachment.filename.split('.').pop() !== 'png') {
+				return messageResponse('Please upload a PNG texture', MessageFlags.Ephemeral);
+			}
 			return embedResponse(
 				{
 					title: `${
 						interaction.data.options[0].options?.find((option) => option.name === 'username')?.value ?? interaction.member.user.username
 					}'s Pillow Submission`,
 					image: {
-						url: interaction.data.options[0].options?.find((option) => option.value === 'texture')?.value as string,
+						url: attachment.url,
 					},
 					fields: [
 						{
-							name: 'Type:',
-							value: `${interaction.data.options[0].options?.find((option) => option.name === 'type')?.value}`,
+							name: 'Name:',
+							value: `${interaction.data.options[0].options?.find((option) => option.name === 'name')?.value}`,
 							inline: true,
 						},
 						{
-							name: 'Name:',
-							value: `${interaction.data.options[0].options?.find((option) => option.name === 'name')?.value}`,
+							name: 'Type:',
+							value: `${interaction.data.options[0].options?.find((option) => option.name === 'type')?.value}`,
 							inline: true,
 						},
 					],
