@@ -282,12 +282,15 @@ function embedResponse(
 		const file = new Blob([attachment.data], { type: attachment.contentType });
 		responseBody.append('files[0]', file, attachment.filename);
 
-		return new Response(responseBody);
+		return new Response(responseBody, {
+			status: 200,
+			headers: { 'Content-Type': 'multipart/form-data' },
+		});
 	}
 
 	return new Response(JSON.stringify(response), {
 		status: 200,
-		headers: { 'Content-Type': 'multipart/form-data' },
+		headers: { 'Content-Type': 'application/json' },
 	});
 }
 async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
