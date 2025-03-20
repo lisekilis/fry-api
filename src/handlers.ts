@@ -14,6 +14,7 @@ import {
 	ApplicationCommandOptionType,
 	APIActionRowComponent,
 	APIMessageActionRowComponent,
+	APIEmbed,
 } from 'discord-api-types/v10';
 import { getTimestamp } from 'discord-snowflake';
 
@@ -243,7 +244,7 @@ function messageResponse(content: string, flags?: MessageFlags): Response {
 	});
 }
 function embedResponse(
-	embed: any,
+	embed: APIEmbed,
 	content?: string,
 	flags?: MessageFlags,
 	components?: APIActionRowComponent<APIMessageActionRowComponent>[]
@@ -403,8 +404,11 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 			return embedResponse(
 				{
 					title: `${
-						interaction.data.options[0].options?.find((option) => option.name === 'username') ?? interaction.member.user.username
+						interaction.data.options[0].options?.find((option) => option.name === 'username')?.value ?? interaction.member.user.username
 					}'s Pillow Submission`,
+					image: {
+						url: interaction.data.options[0].options?.find((option) => option.name === 'texture')?.value as string,
+					},
 					fields: [
 						{
 							name: 'Type:',
@@ -417,6 +421,10 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 							inline: true,
 						},
 					],
+					footer: {
+						text: `Submitted by ${interaction.member.user.username}`,
+						icon_url: interaction.member.user.avatar,
+					},
 				},
 				'Pillow submission received!',
 				undefined,
