@@ -41,14 +41,7 @@ export default {
 		const path = url.pathname;
 		const method = request.method;
 		const pathParts = path.split('/').filter(Boolean);
-
-		// Allow Discord interactions without auth
 		if (method === 'POST' && pathParts[0] === 'interactions') return await handleDiscordInteractions(request, env);
-
-		// Allow public access to Discord embed images
-		if (method === 'GET' && pathParts[0] === 'pillow') {
-			return await handleGetPillow(env, pathParts[2]);
-		}
 		if (!validateToken(request, env)) {
 			return new Response('Unauthorized', { status: 401 });
 		}
@@ -60,6 +53,9 @@ export default {
 
 					case method === 'GET' && pathParts[1] === 'data':
 						return await handleGetPillowData(env, pathParts[2]);
+
+					case method === 'GET' && pathParts[1] === 'texture':
+						return await handleGetPillow(env, pathParts[2]);
 
 					case method === 'POST' && pathParts[1] === 'upload':
 						return await handleUploadPillow(request, env);

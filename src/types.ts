@@ -1,8 +1,8 @@
 import { ApplicationCommandOptionType, ApplicationCommandType } from 'discord-api-types/v10';
 
 export enum PillowType {
-	BODY = 'BODY',
-	NORMAL = 'NORMAL',
+	NORMAL = '1',
+	BODY = '2',
 }
 export type PillowData = {
 	discordApproverId: string;

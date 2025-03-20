@@ -248,7 +248,7 @@ function embedResponse(
 	content?: string,
 	flags?: MessageFlags,
 	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
-	attachment?: { url: string; filename: string }
+	attachment?: { data: ArrayBuffer; filename: string; contentType: string }
 ): Response {
 	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
@@ -261,6 +261,30 @@ function embedResponse(
 			components,
 		},
 	};
+
+	if (attachment) {
+		response.data.attachments = [
+			{
+				id: '0',
+				filename: attachment.filename,
+				description: 'Pillow texture submission',
+			},
+		];
+	}
+
+	const responseBody = attachment ? new FormData() : undefined;
+
+	if (responseBody && attachment) {
+		// Add the JSON part
+		const blob = new Blob([JSON.stringify(response)], { type: 'application/json' });
+		responseBody.append('payload_json', blob);
+
+		// Add the file part
+		const file = new Blob([attachment.data], { type: attachment.contentType });
+		responseBody.append('files[0]', file, attachment.filename);
+
+		return new Response(responseBody);
+	}
 
 	return new Response(JSON.stringify(response), {
 		status: 200,
@@ -420,7 +444,9 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 			// Get additional data
 			const pillowName =
 				(interaction.data.options[0].options?.find((option) => option.name === 'name')?.value as string) || 'Unnamed Pillow';
-			const pillowType = (interaction.data.options[0].options?.find((option) => option.name === 'type')?.value as string) || 'NORMAL';
+			const pillowType = interaction.data.options[0].options?.find((option) => option.name === 'type')?.value as string;
+			const pillowTypeName = pillowType === PillowType.NORMAL ? 'Normal' : pillowType === PillowType.BODY ? 'Dakimakura' : 'Unknown';
+
 			const userName =
 				(interaction.data.options[0].options?.find((option) => option.name === 'username')?.value as string) ||
 				interaction.member.user.username;
@@ -432,32 +458,12 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 				if (!response.ok) {
 					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 				}
-
-				// Store in R2
-				const fileKey = `${interaction.member.user.id}_${pillowType}`;
-				await env.FRY_PILLOWS.put(fileKey, response.body, {
-					httpMetadata: {
-						contentType: 'image/png',
-					},
-					customMetadata: {
-						discordUserId: interaction.member.user.id,
-						discordApproverId: '0', // Will be set when approved
-						submittedAt: new Date().toISOString(),
-						pillowName: pillowName,
-						pillowType: pillowType,
-						userName: userName,
-					},
-				});
-
-				// Use your own API URL instead of Discord's CDN
-				const apiBaseUrl = 'https://fry.api.lisekilis.dev'; // Replace with your actual domain
-				const imageUrl = `${apiBaseUrl}/pillow/${fileKey}`;
-
+				const buffer = await response.arrayBuffer();
 				return embedResponse(
 					{
 						title: `${userName}'s Pillow Submission`,
 						image: {
-							url: imageUrl,
+							url: `attachment://${interaction.member.user.id}_${pillowType}.png`,
 						},
 						fields: [
 							{
@@ -467,7 +473,7 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 							},
 							{
 								name: 'Type:',
-								value: pillowType === 'normal' ? 'Normal' : 'Dakimakura',
+								value: pillowTypeName,
 								inline: true,
 							},
 						],
@@ -486,17 +492,22 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 									type: 2,
 									style: 1,
 									label: 'Approve',
-									custom_id: `approve_${fileKey}`,
+									custom_id: `approve`,
 								},
 								{
 									type: 2,
 									style: 4,
 									label: 'Deny',
-									custom_id: `deny_${fileKey}`,
+									custom_id: `deny`,
 								},
 							],
 						},
-					]
+					],
+					{
+						data: buffer,
+						filename: `${interaction.member.user.id}_${pillowType}.png`,
+						contentType: 'image/png',
+					}
 				);
 			} catch (error) {
 				console.error('Error storing attachment:', error);
