@@ -1,4 +1,4 @@
-import { verifyKey } from 'discord-interactions';
+import { ActionRow, MessageComponent, MessageComponentTypes, verifyKey } from 'discord-interactions';
 import { PillowType } from './types';
 import {
 	APIBaseInteraction,
@@ -12,6 +12,8 @@ import {
 	APIApplicationCommandInteractionDataStringOption,
 	APIInteractionResponse,
 	ApplicationCommandOptionType,
+	APIActionRowComponent,
+	APIMessageActionRowComponent,
 } from 'discord-api-types/v10';
 import { getTimestamp } from 'discord-snowflake';
 
@@ -240,7 +242,12 @@ function messageResponse(content: string, flags?: MessageFlags): Response {
 		headers: { 'Content-Type': 'application/json' },
 	});
 }
-function embedResponse(embed: any, content?: string, flags?: MessageFlags): Response {
+function embedResponse(
+	embed: any,
+	content?: string,
+	flags?: MessageFlags,
+	components?: APIActionRowComponent<APIMessageActionRowComponent>[]
+): Response {
 	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
@@ -249,6 +256,7 @@ function embedResponse(embed: any, content?: string, flags?: MessageFlags): Resp
 			embeds: [embed],
 			allowed_mentions: { parse: [] },
 			flags,
+			components,
 		},
 	};
 	return new Response(JSON.stringify(response), {
@@ -392,7 +400,46 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 		return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
 	switch (interaction.data.options[0].name) {
 		case 'pillow':
-			return messageResponse('Not implemented yet! (if ever)', MessageFlags.Ephemeral);
+			return embedResponse(
+				{
+					title: `${
+						interaction.data.options[0].options?.find((option) => option.name === 'username') ?? interaction.member.user.username
+					}'s Pillow Submission`,
+					fields: [
+						{
+							name: 'Type:',
+							value: `${interaction.data.options[0].options?.find((option) => option.name === 'type')?.value}`,
+							inline: true,
+						},
+						{
+							name: 'Name:',
+							value: `${interaction.data.options[0].options?.find((option) => option.name === 'name')?.value}`,
+							inline: true,
+						},
+					],
+				},
+				'Pillow submission received!',
+				undefined,
+				[
+					{
+						type: 1,
+						components: [
+							{
+								type: 2,
+								style: 1,
+								label: 'Approve',
+								custom_id: 'approve',
+							},
+							{
+								type: 2,
+								style: 4,
+								label: 'Deny',
+								custom_id: 'deny',
+							},
+						],
+					},
+				]
+			);
 		case 'photo':
 			return messageResponse('Not implemented yet! (if ever)', MessageFlags.Ephemeral);
 		default:
