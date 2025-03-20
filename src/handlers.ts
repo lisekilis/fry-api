@@ -240,6 +240,22 @@ function messageResponse(content: string, flags?: MessageFlags): Response {
 		headers: { 'Content-Type': 'application/json' },
 	});
 }
+function embedResponse(embed: any, content?: string, flags?: MessageFlags): Response {
+	const response: APIInteractionResponse = {
+		type: InteractionResponseType.ChannelMessageWithSource,
+		data: {
+			tts: false,
+			content,
+			embeds: [embed],
+			allowed_mentions: { parse: [] },
+			flags,
+		},
+	};
+	return new Response(JSON.stringify(response), {
+		status: 200,
+		headers: { 'Content-Type': 'application/json' },
+	});
+}
 async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	try {
 		console.log(`Processing command: ${interaction.data.name}`);
@@ -249,6 +265,8 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 				return handlePingCommand(interaction);
 			case 'config':
 				return await handleConfigCommand(interaction, env);
+			case 'submit':
+				return await handleSubmissions(interaction, env);
 			default:
 				console.log(`Unknown command: ${interaction.data.name}`);
 				return messageResponse(`Command '${interaction.data.name}' not implemented yet.`, MessageFlags.Ephemeral);
@@ -363,6 +381,24 @@ function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInter
 	const responseTime = Date.now() - interactionTimestamp;
 
 	return messageResponse(`🏓 Pong! (Response time: ${responseTime}ms)`);
+}
+async function handleSubmissions(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
+		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+	const parsedSettings = settings ? JSON.parse(settings) : {};
+	switch (interaction.data.options[0].name) {
+		case 'pillow':
+			return messageResponse('Not implemented yet! (if ever)', MessageFlags.Ephemeral);
+		case 'photo':
+			return messageResponse('Not implemented yet! (if ever)', MessageFlags.Ephemeral);
+		default:
+			break;
+	}
+
+	if (!parsedSettings.pillowChannelId) return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
+	if (interaction.channel.id !== parsedSettings.pillowChannelId)
+		return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
 }
 function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
 	switch (interaction.data.custom_id) {
