@@ -40,11 +40,15 @@ export default {
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const method = request.method;
-		// Split the path into parts
 		const pathParts = path.split('/').filter(Boolean);
+
+		// Allow Discord interactions without auth
 		if (method === 'POST' && pathParts[0] === 'interactions') return await handleDiscordInteractions(request, env);
-		console.log(pathParts);
-		// Validate the token
+
+		// Allow public access to Discord embed images
+		if (method === 'GET' && pathParts[0] === 'discord-embed' && pathParts[1] === 'pillow') {
+			return await handleGetPillow(env, pathParts[2]);
+		}
 		if (!validateToken(request, env)) {
 			return new Response('Unauthorized', { status: 401 });
 		}

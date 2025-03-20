@@ -250,26 +250,6 @@ function embedResponse(
 	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
 	attachment?: { url: string; filename: string }
 ): Response {
-	if (attachment) {
-		// If we have an attachment, we need to send a deferred response
-		// and then use a followup message with the attachment
-		const response: APIInteractionResponse = {
-			type: InteractionResponseType.DeferredChannelMessageWithSource,
-			data: {
-				flags,
-			},
-		};
-
-		// Here you would schedule a followup with the attachment
-		// This requires using Discord's REST API directly
-
-		return new Response(JSON.stringify(response), {
-			status: 200,
-			headers: { 'Content-Type': 'application/json' },
-		});
-	}
-
-	// Regular response without attachment
 	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
@@ -307,6 +287,7 @@ async function handleApplicationCommand(interaction: APIChatInputApplicationComm
 		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 	}
 }
+
 async function handleConfigCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	// Validate the interaction has proper options structure
 	if (
@@ -427,64 +408,101 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 				return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
 			const fileOption = interaction.data.options[0].options?.find((option) => option.name === 'texture');
 
-			if (!fileOption || fileOption.type !== ApplicationCommandOptionType.Attachment) {
-				return messageResponse('Please attach a pillow image', MessageFlags.Ephemeral);
-			}
+			if (!fileOption || fileOption.type !== ApplicationCommandOptionType.Attachment)
+				return messageResponse('Please attach a pillow texture', MessageFlags.Ephemeral);
 			const attachmentId = fileOption.value;
 			const attachment = interaction.data.resolved?.attachments?.[attachmentId];
-			if (!attachment) {
-				return messageResponse('Could not find the attached image', MessageFlags.Ephemeral);
-			}
-			if (attachment.filename.split('.').pop() !== 'png') {
+			if (!attachment) return messageResponse('Could not find the attached image', MessageFlags.Ephemeral);
+
+			if (attachment.filename.split('.').pop()?.toLowerCase() !== 'png')
 				return messageResponse('Please upload a PNG texture', MessageFlags.Ephemeral);
-			}
-			return embedResponse(
-				{
-					title: `${
-						interaction.data.options[0].options?.find((option) => option.name === 'username')?.value ?? interaction.member.user.username
-					}'s Pillow Submission`,
-					image: {
-						url: attachment.url,
+
+			// Get additional data
+			const pillowName =
+				(interaction.data.options[0].options?.find((option) => option.name === 'name')?.value as string) || 'Unnamed Pillow';
+			const pillowType = (interaction.data.options[0].options?.find((option) => option.name === 'type')?.value as string) || 'NORMAL';
+			const userName =
+				(interaction.data.options[0].options?.find((option) => option.name === 'username')?.value as string) ||
+				interaction.member.user.username;
+
+			// Download and store the attachment
+			try {
+				// Download the attachment
+				const response = await fetch(attachment.url);
+				if (!response.ok) {
+					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
+				}
+
+				// Store in R2
+				const fileKey = `${interaction.member.user.id}_${pillowType}`;
+				await env.FRY_PILLOWS.put(fileKey, response.body, {
+					httpMetadata: {
+						contentType: 'image/png',
 					},
-					fields: [
-						{
-							name: 'Name:',
-							value: `${interaction.data.options[0].options?.find((option) => option.name === 'name')?.value}`,
-							inline: true,
-						},
-						{
-							name: 'Type:',
-							value: `${interaction.data.options[0].options?.find((option) => option.name === 'type')?.value}`,
-							inline: true,
-						},
-					],
-					footer: {
-						text: `Submitted by ${interaction.member.user.username}`,
-						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+					customMetadata: {
+						discordUserId: interaction.member.user.id,
+						discordApproverId: '0', // Will be set when approved
+						submittedAt: new Date().toISOString(),
+						pillowName: pillowName,
+						pillowType: pillowType,
+						userName: userName,
 					},
-				},
-				'Pillow submission received!',
-				undefined,
-				[
+				});
+
+				// Use your own API URL instead of Discord's CDN
+				const apiBaseUrl = 'https://fry.api.lisekilis.dev'; // Replace with your actual domain
+				const imageUrl = `${apiBaseUrl}/pillow/${fileKey}`;
+
+				return embedResponse(
 					{
-						type: 1,
-						components: [
+						title: `${userName}'s Pillow Submission`,
+						image: {
+							url: imageUrl,
+						},
+						fields: [
 							{
-								type: 2,
-								style: 1,
-								label: 'Approve',
-								custom_id: 'approve',
+								name: 'Name:',
+								value: pillowName,
+								inline: true,
 							},
 							{
-								type: 2,
-								style: 4,
-								label: 'Deny',
-								custom_id: 'deny',
+								name: 'Type:',
+								value: pillowType === 'normal' ? 'Normal' : 'Dakimakura',
+								inline: true,
 							},
 						],
+						footer: {
+							text: `Submitted by ${interaction.member.user.username}`,
+							icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+						},
 					},
-				]
-			);
+					'Pillow submission received and stored!',
+					undefined,
+					[
+						{
+							type: 1,
+							components: [
+								{
+									type: 2,
+									style: 1,
+									label: 'Approve',
+									custom_id: `approve_${fileKey}`,
+								},
+								{
+									type: 2,
+									style: 4,
+									label: 'Deny',
+									custom_id: `deny_${fileKey}`,
+								},
+							],
+						},
+					]
+				);
+			} catch (error) {
+				console.error('Error storing attachment:', error);
+				return messageResponse('Failed to process the submission', MessageFlags.Ephemeral);
+			}
+
 		case 'photo':
 			return messageResponse('Not implemented yet! (if ever)', MessageFlags.Ephemeral);
 		default:
