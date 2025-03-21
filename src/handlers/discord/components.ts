@@ -1,16 +1,6 @@
 import { APIMessageComponentInteraction, MessageFlags } from 'discord-api-types/v10';
 import { messageResponse } from './responses';
-
-// Helper type guards
-export function isMessageComponentButtonInteraction(interaction: APIMessageComponentInteraction): boolean {
-	return interaction.data.component_type === 2; // 2 is button
-}
-
-export function isGuildInteraction(
-	interaction: APIMessageComponentInteraction
-): interaction is APIMessageComponentInteraction & { guild_id: string; member: any } {
-	return 'guild_id' in interaction && !!interaction.guild_id;
-}
+import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 
 export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
 	if (!isMessageComponentButtonInteraction(interaction)) {
@@ -71,7 +61,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 			const texture = await textureResponse.arrayBuffer();
 
-			await env.FRY_PILLOWS.put(`${userName}_${pillowType}`, texture, {
+			await env.FRY_PILLOWS.put(`${interaction.message.interaction_metadata.user.id}_${pillowType}`, texture, {
 				httpMetadata: {
 					contentType: 'image/png',
 				},
@@ -107,7 +97,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					}),
 				}
 			);
-
+			console.log(await response.text());
 			if (!response.ok) {
 				console.error(`Error updating message: ${await response.text()}`);
 			}

@@ -208,7 +208,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				return embedResponse(
 					embed,
 					'New pillow submission received',
-					MessageFlags.Ephemeral,
+					undefined,
 					[
 						{
 							type: ComponentType.ActionRow,
@@ -222,8 +222,8 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 								{
 									type: ComponentType.Button,
 									style: ButtonStyle.Danger,
-									label: 'Reject',
-									custom_id: 'reject',
+									label: 'Deny',
+									custom_id: 'deny',
 								},
 							],
 						},
