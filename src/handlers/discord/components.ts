@@ -57,6 +57,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch attachment image
 			const textureResponse = await fetch(embed.image.url);
 
+			if (!textureResponse.ok) {
+				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
+				return messageResponse(`Failed to fetch the texture (${textureResponse.status})`, MessageFlags.Ephemeral);
+			}
+
 			// Use the body stream directly
 			const texture = textureResponse.body;
 			if (!texture) {
