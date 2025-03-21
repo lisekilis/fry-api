@@ -54,12 +54,16 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			}
 
-			const textureResponse = await fetch(embed.image.url);
+			const textureResponse = await fetch(embed.image.url || '');
 			if (!textureResponse.ok) {
-				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
+				return messageResponse(`Failed to fetch the texture (${textureResponse.status})`, MessageFlags.Ephemeral);
 			}
 
-			const texture = await textureResponse.arrayBuffer();
+			// Use the body stream directly rather than arrayBuffer()
+			const texture = textureResponse.body;
+			if (!texture) {
+				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
+			}
 
 			await env.FRY_PILLOWS.put(`${interaction.message.interaction_metadata.user.id}_${pillowType}`, texture, {
 				httpMetadata: {
