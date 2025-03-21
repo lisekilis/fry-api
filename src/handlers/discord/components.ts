@@ -54,12 +54,19 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			}
 
-			const textureResponse = await fetch(embed.image.url || '');
+			// Add Bot token authorization header to the request
+			const textureResponse = await fetch(embed.image.url, {
+				headers: {
+					Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+				},
+			});
+
 			if (!textureResponse.ok) {
+				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
 				return messageResponse(`Failed to fetch the texture (${textureResponse.status})`, MessageFlags.Ephemeral);
 			}
 
-			// Use the body stream directly rather than arrayBuffer()
+			// Use the body stream directly
 			const texture = textureResponse.body;
 			if (!texture) {
 				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
