@@ -11,6 +11,8 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+// Barrel file to re-export all handlers
+
 import {
 	handleListPillows,
 	handleGetPillow,
@@ -23,7 +25,7 @@ import {
 	handleGetPillowData,
 	handleGetImageData,
 	handleDiscordInteractions,
-} from './handlers';
+} from './handlers/index';
 
 async function validateToken(request: Request, env: Env): Promise<boolean> {
 	const authHeader = request.headers.get('Authorization');
