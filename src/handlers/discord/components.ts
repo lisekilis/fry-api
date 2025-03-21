@@ -54,7 +54,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			}
 
-			const textureResponse = await fetch(embed.image.url || '');
+			const textureResponse = await fetch(interaction.message.attachments[0].url || '');
 			if (!textureResponse.ok) {
 				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
 			}
