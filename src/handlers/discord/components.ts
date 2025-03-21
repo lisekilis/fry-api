@@ -50,11 +50,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 	switch (interaction.data.custom_id) {
 		case 'approve':
-			if (!embed.image || !interaction.message.attachments) {
+			if (!embed.image || !embed.image.url) {
 				return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			}
 
-			const textureResponse = await fetch(interaction.message.attachments[0].url);
+			const textureResponse = await fetch(embed.image.url);
 			if (!textureResponse.ok) {
 				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
 			}
