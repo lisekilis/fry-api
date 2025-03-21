@@ -18,6 +18,8 @@ import {
 	APIInteractionResponseChannelMessageWithSource,
 } from 'discord-api-types/v10';
 import { getTimestamp } from 'discord-snowflake';
+import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
+import { time } from 'console';
 
 export async function handleListPillows(env: Env): Promise<Response> {
 	const list = await env.FRY_PILLOWS.list();
@@ -223,7 +225,7 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 		case InteractionType.ApplicationCommand:
 			return await handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env);
 		case InteractionType.MessageComponent:
-			return handleMessageComponent(interaction as APIMessageComponentInteraction);
+			return handleMessageComponent(interaction as APIMessageComponentInteraction, env);
 		default:
 			return new Response('Interaction not handled', { status: 400 });
 	}
@@ -514,12 +516,86 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 	}
 	return messageResponse('I have no idea how you got here', MessageFlags.Ephemeral);
 }
-function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
+async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
+	if (!isMessageComponentButtonInteraction(interaction)) return messageResponse('Only buttons are supported', MessageFlags.Ephemeral);
+	if (!isGuildInteraction(interaction)) return messageResponse('This interaction is not in a guild', MessageFlags.Ephemeral);
+	if (!interaction.message.interaction_metadata?.user) return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
 	switch (interaction.data.custom_id) {
 		case 'approve':
-			return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
+			const messsage = interaction.message;
+			const embed = messsage.embeds[0];
+			const fields = embed.fields;
+			if (!fields) return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
+			const pillowName = fields.find((field) => field.name === 'Name:')?.value;
+			const pillowType = fields.find((field) => field.name === 'Type:')?.value;
+			if (!pillowName || !pillowType) return messageResponse('The submission lacks a name or type', MessageFlags.Ephemeral);
+			const userName = embed.title?.split("'s Pillow Submission")[0];
+			if (!userName) return messageResponse('The submission lacks a user name', MessageFlags.Ephemeral);
+			if (!embed.image) return messageResponse('The submission lacks a texture, how bizzare!', MessageFlags.Ephemeral);
+			const texture = (await fetch(embed.image.url || '')).body;
+			if (!texture) return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
+			env.FRY_PILLOWS.put(`${userName}_${pillowType}`, texture, {
+				httpMetadata: {
+					contentType: 'image/png',
+				},
+				customMetadata: {
+					discordUserId: interaction.message.interaction_metadata.user.id,
+					discordApproverId: interaction.member.user.id,
+					submittedAt: interaction.message.timestamp,
+					pillowName,
+					pillowType,
+					userName,
+				},
+			});
+			const newEmbed = {
+				...embed,
+				footer: {
+					text: `Approved by ${interaction.member.user.username}`,
+					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+				},
+				timestamp: new Date().toISOString(),
+			};
+			fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+				},
+				body: JSON.stringify({
+					embeds: [newEmbed],
+					components: [],
+				}),
+			});
+			console.log(`Approving pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
+			return messageResponse(
+				`Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
+				MessageFlags.Ephemeral
+			);
 		case 'deny':
-			return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
+			const newEmbedDeny = {
+				...interaction.message.embeds[0],
+				footer: {
+					text: `Denied by ${interaction.member.user.username}`,
+					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+				},
+				timestamp: new Date().toISOString(),
+			};
+			fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+				},
+				body: JSON.stringify({
+					embeds: [newEmbedDeny],
+					components: [],
+				}),
+			});
+			console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
+			return messageResponse(
+				`Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
+				MessageFlags.Ephemeral
+			);
 		default:
 			return new Response('Button interaction not handled', { status: 400 });
 	}
