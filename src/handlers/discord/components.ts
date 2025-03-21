@@ -53,7 +53,8 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 		case 'approve':
 			// fetch the message
 			console.log(JSON.stringify(interaction.message.attachments));
-			if (!interaction.message.attachments || !interaction.message.attachments[0].id)
+			console.log(interaction.message);
+			if (!interaction.message.attachments || !interaction.message.attachments[0] || !interaction.message.attachments[0].id)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
 			const attachment = interaction.message.attachments[0];
 			if (!attachment) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
