@@ -53,13 +53,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			if (!embed.image || !embed.image.url) {
 				return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			}
-
-			// Add Bot token authorization header to the request
-			const textureResponse = await fetch(embed.image.url, {
-				headers: {
-					Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-				},
-			});
+			console.log(embed.image.url);
+			// fetch attachment image
+			const textureResponse = await fetch(embed.image.url);
 
 			if (!textureResponse.ok) {
 				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
