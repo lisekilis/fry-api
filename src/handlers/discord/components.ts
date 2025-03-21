@@ -27,6 +27,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 		return messageResponse('Only image moderators are allowed to manage submissions', MessageFlags.Ephemeral);
 	}
 
+	const user = interaction.message.interaction_metadata.user;
 	const message = interaction.message;
 	const embed = message.embeds[0];
 	const fields = embed.fields;
@@ -52,7 +53,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 		case 'approve':
 			// fetch the message
 			if (!interaction.message.attachments) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
-			const attachment = interaction.message.attachments.find((attachment) => attachment.filename === `${userName}_${pillowType}.png`);
+			const attachment = interaction.message.attachments.find((attachment) => attachment.filename === `${user.id}_${pillowType}.png`);
 			if (!attachment) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			console.log(attachment.url);
 			// fetch attachment image
@@ -69,12 +70,12 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
 			}
 
-			await env.FRY_PILLOWS.put(`${interaction.message.interaction_metadata.user.id}_${pillowType}`, texture, {
+			await env.FRY_PILLOWS.put(`${user}_${pillowType}`, texture, {
 				httpMetadata: {
 					contentType: 'image/png',
 				},
 				customMetadata: {
-					discordUserId: interaction.message.interaction_metadata.user.id,
+					discordUserId: user.id,
 					discordApproverId: interaction.member.user.id,
 					submittedAt: interaction.message.timestamp,
 					pillowName,
@@ -86,7 +87,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			const newEmbed = {
 				...embed,
 				footer: {
-					text: `Approved by ${interaction.member.user.username}`,
+					text: `Approved by <@${interaction.member.user.id}>`,
 					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
 				},
 				timestamp: new Date().toISOString(),
@@ -112,16 +113,13 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 			console.log(`Approving pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
 
-			return messageResponse(
-				`Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
-				MessageFlags.Ephemeral
-			);
+			return messageResponse(`Approved pillow submission: ${pillowName} (${pillowType}) by <@${user.id}>`, MessageFlags.Ephemeral);
 
 		case 'deny':
 			const newEmbedDeny = {
 				...embed,
 				footer: {
-					text: `Denied by ${interaction.member.user.username}`,
+					text: `Denied by <@${interaction.member.user.id}>`,
 					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
 				},
 				timestamp: new Date().toISOString(),
