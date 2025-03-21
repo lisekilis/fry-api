@@ -54,6 +54,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!interaction.message.attachments || !interaction.message.attachments[0].id)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+			console.log(JSON.stringify(interaction.message.attachments));
 			const attachment = interaction.message.attachments[0];
 			if (!attachment) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			console.log(attachment.url);
