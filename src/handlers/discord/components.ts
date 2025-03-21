@@ -1,4 +1,4 @@
-import { APIMessageComponentInteraction, MessageFlags } from 'discord-api-types/v10';
+import { APIMessageComponentInteraction, ImageFormat, MessageFlags } from 'discord-api-types/v10';
 import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 
@@ -52,8 +52,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 	switch (interaction.data.custom_id) {
 		case 'approve':
 			// fetch the message
-			if (!interaction.message.attachments) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
-			const attachment = interaction.message.attachments.find((attachment) => attachment.filename === `${user.id}_${pillowType}.png`);
+			if (!interaction.message.attachments || !interaction.message.attachments[0].id)
+				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+			const attachment = interaction.message.attachments[0];
 			if (!attachment) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
 			console.log(attachment.url);
 			// fetch attachment image
@@ -86,6 +87,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 			const newEmbed = {
 				...embed,
+				image: {
+					url: `https://pillows.fry.api.lisekilis.dev/${user.id}_${pillowType}`,
+				},
 				footer: {
 					text: `Approved by <@${interaction.member.user.id}>`,
 					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
@@ -103,6 +107,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					body: JSON.stringify({
 						embeds: [newEmbed],
 						components: [],
+						attachments: [
+							{
+								id: interaction.message.attachments[0].id,
+							},
+						],
 					}),
 				}
 			);
@@ -135,6 +144,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					body: JSON.stringify({
 						embeds: [newEmbedDeny],
 						components: [],
+						attachments: [
+							{
+								id: interaction.message.attachments[0].id,
+							},
+						],
 					}),
 				}
 			);
