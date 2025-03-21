@@ -18,7 +18,7 @@ export function handlePingCommand(interaction: APIChatInputApplicationCommandGui
 	const endTime = Date.now();
 	const ping = endTime - startTime;
 
-	return messageResponse(`Pong! (${ping}ms)`);
+	return messageResponse(`🏓Pong! (${ping}ms)`);
 }
 
 export async function handleConfigCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
