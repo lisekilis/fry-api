@@ -520,6 +520,12 @@ async function handleMessageComponent(interaction: APIMessageComponentInteractio
 	if (!isMessageComponentButtonInteraction(interaction)) return messageResponse('Only buttons are supported', MessageFlags.Ephemeral);
 	if (!isGuildInteraction(interaction)) return messageResponse('This interaction is not in a guild', MessageFlags.Ephemeral);
 	if (!interaction.message.interaction_metadata?.user) return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
+	//check if the user is a mod
+	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+	const parsedSettings = settings ? JSON.parse(settings) : {};
+	if (!parsedSettings.modRoleId) return messageResponse('No mod role set', MessageFlags.Ephemeral);
+	if (!interaction.member.roles.includes(parsedSettings.modRoleId))
+		return messageResponse('Only image moderators are allowed to manage submissions', MessageFlags.Ephemeral);
 	switch (interaction.data.custom_id) {
 		case 'approve':
 			const messsage = interaction.message;
@@ -555,7 +561,7 @@ async function handleMessageComponent(interaction: APIMessageComponentInteractio
 				},
 				timestamp: new Date().toISOString(),
 			};
-			fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+			await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
