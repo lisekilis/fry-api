@@ -146,6 +146,8 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 						MessageFlags.Ephemeral
 					);
 				}
+				if (interaction.channel.id !== parsedSettings.pillowChannelId)
+					return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
 
 				// Get pillow details
 				const nameOption = subcommand.options?.find((option) => option.name === 'name');
@@ -153,24 +155,25 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				const textureOption = subcommand.options?.find((option) => option.name === 'texture');
 				const usernameOption = subcommand.options?.find((option) => option.name === 'username');
 
-				if (!nameOption || !typeOption || !textureOption) {
-					return messageResponse('Missing required options', MessageFlags.Ephemeral);
-				}
+				if (!nameOption || !typeOption || !textureOption) return messageResponse('Missing required options', MessageFlags.Ephemeral);
 
 				const pillowName = nameOption.value as string;
 				const pillowType = typeOption.value as PillowType;
-				const textureId = textureOption.value as string;
+				const attachmentId = textureOption.value as string;
 				const username = (usernameOption?.value as string) || interaction.member.user.username;
 
 				// Get the attached texture
-				const texture = interaction.data.resolved?.attachments?.[textureId];
-				if (!texture) {
+				const attachment = interaction.data.resolved?.attachments?.[attachmentId];
+				if (!attachment) {
 					return messageResponse('Texture attachment not found', MessageFlags.Ephemeral);
 				}
-
 				// Validate texture is png
-				if (!texture.content_type?.includes('png')) {
+				if (!attachment.content_type?.includes('png')) {
 					return messageResponse('Texture must be a PNG image', MessageFlags.Ephemeral);
+				}
+				const response = await fetch(attachment.url);
+				if (!response.ok) {
+					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 				}
 
 				// Create embed for the submission
@@ -182,7 +185,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 					},
 					{
 						name: 'Type:',
-						value: pillowType === PillowType.NORMAL ? 'Standard' : 'Dakimakura',
+						value: pillowType,
 						inline: true,
 					},
 				];
@@ -190,57 +193,46 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				const embed: APIEmbed = {
 					title: `${username}'s Pillow Submission`,
 					description: `A new pillow submission has been received from <@${interaction.member.user.id}>`,
-					color: 0x00ff00,
+					thumbnail: {
+						url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+					},
+					color: 0x9469c9,
 					fields,
 					image: {
-						url: texture.url,
-					},
-					timestamp: new Date().toISOString(),
-					footer: {
-						text: `Submitted by ${interaction.member.user.username}`,
-						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+						url: `attachment://${interaction.member.user.id}_${pillowType}.png`,
 					},
 				};
 
 				// Post to the submissions channel
-				const webhookResponse = await fetch(`https://discord.com/api/v10/channels/${parsedSettings.pillowChannelId}/messages`, {
-					method: 'POST',
-					headers: {
-						Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						embeds: [embed],
-						components: [
-							{
-								type: ComponentType.ActionRow,
-								components: [
-									{
-										type: ComponentType.Button,
-										style: ButtonStyle.Success,
-										label: 'Approve',
-										custom_id: 'approve',
-									},
-									{
-										type: ComponentType.Button,
-										style: ButtonStyle.Danger,
-										label: 'Deny',
-										custom_id: 'deny',
-									},
-								],
-							},
-						],
-					}),
-				});
 
-				if (!webhookResponse.ok) {
-					console.error(`Failed to post submission: ${await webhookResponse.text()}`);
-					return messageResponse('Failed to submit pillow design', MessageFlags.Ephemeral);
-				}
-
-				return messageResponse(
-					`Your pillow design "${pillowName}" has been submitted for approval. You'll be notified when it's approved.`,
-					MessageFlags.Ephemeral
+				return embedResponse(
+					embed,
+					'New pillow submission received',
+					MessageFlags.Ephemeral,
+					[
+						{
+							type: ComponentType.ActionRow,
+							components: [
+								{
+									type: ComponentType.Button,
+									style: ButtonStyle.Primary,
+									label: 'Approve',
+									custom_id: 'approve',
+								},
+								{
+									type: ComponentType.Button,
+									style: ButtonStyle.Danger,
+									label: 'Reject',
+									custom_id: 'reject',
+								},
+							],
+						},
+					],
+					{
+						data: await response.arrayBuffer(),
+						filename: `${interaction.member.user.id}_${pillowType}.png`,
+						contentType: 'image/png',
+					}
 				);
 			}
 
