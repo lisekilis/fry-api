@@ -526,17 +526,17 @@ async function handleMessageComponent(interaction: APIMessageComponentInteractio
 	if (!parsedSettings.modRoleId) return messageResponse('No mod role set', MessageFlags.Ephemeral);
 	if (!interaction.member.roles.includes(parsedSettings.modRoleId))
 		return messageResponse('Only image moderators are allowed to manage submissions', MessageFlags.Ephemeral);
+	const messsage = interaction.message;
+	const embed = messsage.embeds[0];
+	const fields = embed.fields;
+	if (!fields) return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
+	const pillowName = fields.find((field) => field.name === 'Name:')?.value;
+	const pillowType = fields.find((field) => field.name === 'Type:')?.value;
+	if (!pillowName || !pillowType) return messageResponse('The submission lacks a name or type', MessageFlags.Ephemeral);
+	const userName = embed.title?.split("'s Pillow Submission")[0];
+	if (!userName) return messageResponse('The submission lacks a user name', MessageFlags.Ephemeral);
 	switch (interaction.data.custom_id) {
 		case 'approve':
-			const messsage = interaction.message;
-			const embed = messsage.embeds[0];
-			const fields = embed.fields;
-			if (!fields) return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
-			const pillowName = fields.find((field) => field.name === 'Name:')?.value;
-			const pillowType = fields.find((field) => field.name === 'Type:')?.value;
-			if (!pillowName || !pillowType) return messageResponse('The submission lacks a name or type', MessageFlags.Ephemeral);
-			const userName = embed.title?.split("'s Pillow Submission")[0];
-			if (!userName) return messageResponse('The submission lacks a user name', MessageFlags.Ephemeral);
 			if (!embed.image) return messageResponse('The submission lacks a texture, how bizzare!', MessageFlags.Ephemeral);
 			const texture = (await fetch(embed.image.url || '')).body;
 			if (!texture) return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
@@ -565,7 +565,6 @@ async function handleMessageComponent(interaction: APIMessageComponentInteractio
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
 				},
 				body: JSON.stringify({
 					embeds: [newEmbed],
@@ -578,26 +577,33 @@ async function handleMessageComponent(interaction: APIMessageComponentInteractio
 				MessageFlags.Ephemeral
 			);
 		case 'deny':
+			if (!fields) return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
+			if (!pillowName || !pillowType) return messageResponse('The submission lacks a name or type', MessageFlags.Ephemeral);
+			const denyUserName = embed.title?.split("'s Pillow Submission")[0];
+			if (!denyUserName) return messageResponse('The submission lacks a user name', MessageFlags.Ephemeral);
+
 			const newEmbedDeny = {
-				...interaction.message.embeds[0],
+				...embed,
 				footer: {
 					text: `Denied by ${interaction.member.user.username}`,
 					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
 				},
 				timestamp: new Date().toISOString(),
 			};
-			fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+
+			// Add await to ensure the request completes
+			await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
 				},
 				body: JSON.stringify({
 					embeds: [newEmbedDeny],
 					components: [],
 				}),
 			});
-			console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
+
+			console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${denyUserName}`);
 			return messageResponse(
 				`Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
 				MessageFlags.Ephemeral
