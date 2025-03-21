@@ -51,20 +51,12 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 	switch (interaction.data.custom_id) {
 		case 'approve':
 			// fetch the message
-			const freshImageUrl = (
-				(await (
-					await fetch(`https://discord.com/api/v10/channels/${interaction.channel.id}/messages/${interaction.message.id}`, {
-						headers: {
-							Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-						},
-					})
-				).json()) as { embeds: { image: { url: string } }[] }
-			).embeds[0].image.url;
-			if (!embed.image || !embed.image.url) {
-				return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
-			}
-			console.log(freshImageUrl);
-			const textureResponse = await fetch(freshImageUrl);
+			if (!interaction.message.attachments) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
+			const attachment = interaction.message.attachments.find((attachment) => attachment.filename === `${userName}_${pillowType}.png`);
+			if (!attachment) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
+			console.log(attachment.url);
+			// fetch attachment image
+			const textureResponse = await fetch(attachment.url);
 
 			if (!textureResponse.ok) {
 				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
