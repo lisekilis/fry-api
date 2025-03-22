@@ -55,7 +55,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
 			const messageReResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`
 			);
 			console.log(await messageReResponse.text());
 			const message = (await (messageReResponse.ok ? messageReResponse.json() : messageReResponse.json())) as APIMessage;
@@ -109,7 +109,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			};
 
 			const response = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`,
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
 				{
 					method: 'PATCH',
 					headers: {
