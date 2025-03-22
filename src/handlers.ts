@@ -15,11 +15,8 @@ import {
 	APIActionRowComponent,
 	APIMessageActionRowComponent,
 	APIEmbed,
-	APIInteractionResponseChannelMessageWithSource,
 } from 'discord-api-types/v10';
 import { getTimestamp } from 'discord-snowflake';
-import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
-import { time } from 'console';
 
 export async function handleListPillows(env: Env): Promise<Response> {
 	const list = await env.FRY_PILLOWS.list();
@@ -225,7 +222,7 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 		case InteractionType.ApplicationCommand:
 			return await handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env);
 		case InteractionType.MessageComponent:
-			return handleMessageComponent(interaction as APIMessageComponentInteraction, env);
+			return handleMessageComponent(interaction as APIMessageComponentInteraction);
 		default:
 			return new Response('Interaction not handled', { status: 400 });
 	}
@@ -251,9 +248,9 @@ function embedResponse(
 	content?: string,
 	flags?: MessageFlags,
 	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
-	attachment?: { data: ArrayBuffer; filename: string; contentType: string }
+	attachment?: { url: string; filename: string }
 ): Response {
-	const response: APIInteractionResponseChannelMessageWithSource = {
+	const response: APIInteractionResponse = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
 			tts: false,
@@ -264,23 +261,6 @@ function embedResponse(
 			components,
 		},
 	};
-
-	if (attachment) {
-		response.data.attachments = [
-			{
-				id: '0',
-				filename: attachment.filename,
-			},
-		];
-	}
-	const responseBody = attachment ? new FormData() : undefined;
-
-	if (responseBody && attachment) {
-		responseBody.append('payload_json', JSON.stringify(response));
-		const file = new Blob([attachment.data], { type: attachment.contentType });
-		responseBody.append('files[0]', file, attachment.filename);
-		return new Response(responseBody);
-	}
 
 	return new Response(JSON.stringify(response), {
 		status: 200,
@@ -440,7 +420,7 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 			// Get additional data
 			const pillowName =
 				(interaction.data.options[0].options?.find((option) => option.name === 'name')?.value as string) || 'Unnamed Pillow';
-			const pillowType = interaction.data.options[0].options?.find((option) => option.name === 'type')?.value as string;
+			const pillowType = (interaction.data.options[0].options?.find((option) => option.name === 'type')?.value as string);
 			const pillowTypeName = pillowType === PillowType.NORMAL ? 'Normal' : pillowType === PillowType.BODY ? 'Dakimakura' : 'Unknown';
 
 			const userName =
@@ -455,12 +435,10 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 				}
 				const buffer = await response.arrayBuffer();
+				const file = new File([buffer], `${interaction.member.user.id}_${pillowType}.png`, { type: 'image/png' });
 				return embedResponse(
 					{
 						title: `${userName}'s Pillow Submission`,
-						thumbnail: {
-							url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-						},
 						image: {
 							url: `attachment://${interaction.member.user.id}_${pillowType}.png`,
 						},
@@ -476,6 +454,10 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 								inline: true,
 							},
 						],
+						footer: {
+							text: `Submitted by ${interaction.member.user.username}`,
+							icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+						},
 					},
 					'Pillow submission received and stored!',
 					undefined,
@@ -497,12 +479,7 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 								},
 							],
 						},
-					],
-					{
-						data: buffer,
-						filename: `${interaction.member.user.id}_${pillowType}.png`,
-						contentType: 'image/png',
-					}
+					]
 				);
 			} catch (error) {
 				console.error('Error storing attachment:', error);
@@ -516,98 +493,12 @@ async function handleSubmissions(interaction: APIChatInputApplicationCommandGuil
 	}
 	return messageResponse('I have no idea how you got here', MessageFlags.Ephemeral);
 }
-async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
-	if (!isMessageComponentButtonInteraction(interaction)) return messageResponse('Only buttons are supported', MessageFlags.Ephemeral);
-	if (!isGuildInteraction(interaction)) return messageResponse('This interaction is not in a guild', MessageFlags.Ephemeral);
-	if (!interaction.message.interaction_metadata?.user) return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
-	//check if the user is a mod
-	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
-	const parsedSettings = settings ? JSON.parse(settings) : {};
-	if (!parsedSettings.modRoleId) return messageResponse('No mod role set', MessageFlags.Ephemeral);
-	if (!interaction.member.roles.includes(parsedSettings.modRoleId))
-		return messageResponse('Only image moderators are allowed to manage submissions', MessageFlags.Ephemeral);
-	const messsage = interaction.message;
-	const embed = messsage.embeds[0];
-	const fields = embed.fields;
-	if (!fields) return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
-	const pillowName = fields.find((field) => field.name === 'Name:')?.value;
-	const pillowType = fields.find((field) => field.name === 'Type:')?.value;
-	if (!pillowName || !pillowType) return messageResponse('The submission lacks a name or type', MessageFlags.Ephemeral);
-	const userName = embed.title?.split("'s Pillow Submission")[0];
-	if (!userName) return messageResponse('The submission lacks a user name', MessageFlags.Ephemeral);
+function handleMessageComponent(interaction: APIMessageComponentInteraction): Response {
 	switch (interaction.data.custom_id) {
 		case 'approve':
-			if (!embed.image) return messageResponse('The submission lacks a texture, how bizzare!', MessageFlags.Ephemeral);
-			const texture = (await fetch(embed.image.url || '')).body;
-			if (!texture) return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
-			env.FRY_PILLOWS.put(`${userName}_${pillowType}`, texture, {
-				httpMetadata: {
-					contentType: 'image/png',
-				},
-				customMetadata: {
-					discordUserId: interaction.message.interaction_metadata.user.id,
-					discordApproverId: interaction.member.user.id,
-					submittedAt: interaction.message.timestamp,
-					pillowName,
-					pillowType,
-					userName,
-				},
-			});
-			const newEmbed = {
-				...embed,
-				footer: {
-					text: `Approved by ${interaction.member.user.username}`,
-					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-				},
-				timestamp: new Date().toISOString(),
-			};
-			await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					embeds: [newEmbed],
-					components: [],
-				}),
-			});
-			console.log(`Approving pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
-			return messageResponse(
-				`Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
-				MessageFlags.Ephemeral
-			);
+			return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
 		case 'deny':
-			if (!fields) return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
-			if (!pillowName || !pillowType) return messageResponse('The submission lacks a name or type', MessageFlags.Ephemeral);
-			const denyUserName = embed.title?.split("'s Pillow Submission")[0];
-			if (!denyUserName) return messageResponse('The submission lacks a user name', MessageFlags.Ephemeral);
-
-			const newEmbedDeny = {
-				...embed,
-				footer: {
-					text: `Denied by ${interaction.member.user.username}`,
-					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-				},
-				timestamp: new Date().toISOString(),
-			};
-
-			// Add await to ensure the request completes
-			await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					embeds: [newEmbedDeny],
-					components: [],
-				}),
-			});
-
-			console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${denyUserName}`);
-			return messageResponse(
-				`Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
-				MessageFlags.Ephemeral
-			);
+			return messageResponse('Button Pressed!', MessageFlags.Ephemeral);
 		default:
 			return new Response('Button interaction not handled', { status: 400 });
 	}

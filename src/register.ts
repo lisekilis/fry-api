@@ -131,9 +131,10 @@ const commands: Command[] = [
 						required: true,
 					},
 					{
-						name: 'username',
+						name: 'date',
 						type: ApplicationCommandOptionType.String,
-						description: 'Override, defaults to your username',
+						description: 'Date of the photo (defaults to last friday)',
+						required: false,
 					},
 				],
 			},
@@ -148,11 +149,87 @@ const commands: Command[] = [
 				name: 'pillows',
 				type: ApplicationCommandOptionType.Subcommand,
 				description: 'List pillows',
+				options: [
+					{
+						name: 'type',
+						type: ApplicationCommandOptionType.String,
+						description: 'Type of pillows to list',
+						choices: [
+							{
+								name: 'Standard',
+								value: PillowType.NORMAL,
+							},
+							{
+								name: 'Dakimakura',
+								value: PillowType.BODY,
+							},
+						],
+					},
+					{
+						name: 'user',
+						type: ApplicationCommandOptionType.User,
+						description: 'User to list pillows for',
+					},
+					{
+						name: 'random',
+						type: ApplicationCommandOptionType.Boolean,
+						description: 'Randomize the order of the pillows',
+					},
+					{
+						name: 'count',
+						type: ApplicationCommandOptionType.Integer,
+						description: 'Number of pillows to list',
+						choices: [
+							{ name: '1', value: '1' },
+							{ name: '5', value: '5' },
+							{ name: '10', value: '10' },
+							{ name: '25', value: '25' },
+						],
+					},
+				],
 			},
 			{
 				name: 'photos',
 				type: ApplicationCommandOptionType.Subcommand,
 				description: 'List Fry-Day group photos',
+				options: [
+					{
+						name: 'type',
+						type: ApplicationCommandOptionType.String,
+						description: 'Type of pillows to list',
+						choices: [
+							{
+								name: 'Standard',
+								value: PillowType.NORMAL,
+							},
+							{
+								name: 'Dakimakura',
+								value: PillowType.BODY,
+							},
+						],
+					},
+					{
+						name: 'user',
+						type: ApplicationCommandOptionType.User,
+						description: 'User to list pillows for',
+					},
+					{
+						name: 'random',
+						type: ApplicationCommandOptionType.Boolean,
+						description: 'Randomize the order of the pillows',
+					},
+					{
+						name: 'count',
+						type: ApplicationCommandOptionType.Integer,
+						description: 'Number of pillows to list',
+						choices: [
+							{ name: '1', value: '1' },
+							{ name: '5', value: '5' },
+							{ name: '10', value: '10' },
+							{ name: '25', value: '25' },
+						],
+					},
+				],
 			},
 		],
 	},

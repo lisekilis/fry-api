@@ -119,7 +119,50 @@ export async function handleConfigCommand(interaction: APIChatInputApplicationCo
 		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 	}
 }
+export async function handleDeleteCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (interaction.data.options?.[0].type !== ApplicationCommandOptionType.Subcommand)
+		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 
+	switch (interaction.data.options[0].name) {
+		case 'pillow':
+			const id = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
+			if (!id) return messageResponse('Please provide a valid ID', MessageFlags.Ephemeral);
+			try {
+				await env.FRY_PILLOWS.delete(id);
+			} catch (error) {
+				return messageResponse('Failed to delete pillow', MessageFlags.Ephemeral);
+			}
+			return messageResponse('Pillow deleted successfully', MessageFlags.Ephemeral);
+		default:
+			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
+	}
+}
+export async function handleListImages(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (interaction.data.options?.[0].type !== ApplicationCommandOptionType.Subcommand)
+		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+	const pillows = env.FRY_PILLOWS.list();
+
+	const type = interaction.data.options?.[0].options?.find((option) => option.name === 'type')?.value as PillowType;
+
+	if (!pillows.objects) {
+		return messageResponse('No pillows found', MessageFlags.Ephemeral);
+	}
+
+	const filteredPillows = pillows.objects.filter((pillow) => pillow.customMetadata.type === type);
+
+	const embed: APIEmbed = {
+		title: `${type} Pillows`,
+		description: `List of all ${type} pillows`,
+		color: 0x9469c9,
+		fields: pillows.map((pillow) => ({
+			name: pillow.name,
+			value: `<@${pillow.userId}>`,
+			inline: true,
+		})),
+	};
+
+	return embedResponse(embed);
+}
 export async function handleSubmissions(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	// Guard conditions - ensure we have proper subcommand
 	if (!interaction.data.options?.[0]) return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
@@ -246,5 +289,74 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 	} catch (error) {
 		console.error(`Error in handleSubmission: ${error}`);
 		return messageResponse('An error occurred while processing your submission', MessageFlags.Ephemeral);
+	}
+}
+export async function handleInageUpload(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
+		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+
+	switch (interaction.data.options[0].name) {
+		case 'photo':
+			const attachmentId = interaction.data.options[0].options?.find((option) => option.name === 'attachment')?.value as string;
+			const date = interaction.data.options[0].options?.find((option) => option.name === 'date')?.value as string;
+			if (!attachmentId) return messageResponse('Please provide a valid ID and attachment', MessageFlags.Ephemeral);
+			// Get the attachment
+			const attachment = interaction.data.resolved?.attachments?.[attachmentId];
+			if (!attachment) return messageResponse('Attachment not found', MessageFlags.Ephemeral);
+
+			// Validate attachment is png
+			if (!attachment.content_type?.includes('png')) return messageResponse('Attachment must be a PNG image', MessageFlags.Ephemeral);
+
+			// Download the attachment
+			const response = await fetch(attachment.url);
+			if (!response.ok) return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
+
+			// Update the pillow
+			await env.FRY_PHOTOS.put(crypto.randomUUID(), response.body, {
+				httpMetadata: {
+					contentType: 'image/png',
+				},
+				customMetadata: {
+					discordUserId: interaction.member.user.id,
+					submittedAt: new Date(getTimestamp(`${BigInt(interaction.id)}`)).toISOString(),
+					// set date to last friday
+					date:
+						date ??
+						(() => {
+							// Get the current date
+							const today = new Date();
+							const dayOfWeek = today.getDay(); // 0-6 (Sun-Sat)
+
+							// Calculate days to subtract to get to last Friday
+							let daysToSubtract;
+							if (dayOfWeek === 6) {
+								// Saturday
+								daysToSubtract = 1; // Go back 1 day to Friday
+							} else if (dayOfWeek === 5) {
+								// Today is Friday
+								daysToSubtract = 7; // Go back a week to last Friday
+							} else {
+								// Sunday-Thursday
+								daysToSubtract = dayOfWeek + 2; // Sunday(0)+2=2, Monday(1)+2=3, etc.
+							}
+
+							// Create date for last Friday
+							const lastFriday = new Date();
+							lastFriday.setDate(today.getDate() - daysToSubtract);
+
+							// Format as dd/mm/yyyy
+							const dd = String(lastFriday.getDate()).padStart(2, '0');
+							const mm = String(lastFriday.getMonth() + 1).padStart(2, '0'); // January is 0!
+							const yyyy = lastFriday.getFullYear();
+							return `${dd}/${mm}/${yyyy}`;
+						})(),
+					userName: interaction.member.user.username,
+				},
+			});
+
+			return messageResponse('Image uploaded successfully', MessageFlags.Ephemeral);
+
+		default:
+			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
 	}
 }
