@@ -294,7 +294,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 export async function handleImageUpload(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
-
+	const id = crypto.randomUUID();
 	switch (interaction.data.options[0].name) {
 		case 'photo':
 			const attachmentId = interaction.data.options[0].options?.find((option) => option.name === 'image')?.value as string;
@@ -312,7 +312,7 @@ export async function handleImageUpload(interaction: APIChatInputApplicationComm
 			if (!response.ok) return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 
 			// Update the pillow
-			await env.FRY_PHOTOS.put(crypto.randomUUID(), response.body, {
+			await env.FRY_PHOTOS.put(id, response.body, {
 				httpMetadata: {
 					contentType: 'image/png',
 				},
@@ -354,7 +354,7 @@ export async function handleImageUpload(interaction: APIChatInputApplicationComm
 				},
 			});
 
-			return messageResponse('Image uploaded successfully', MessageFlags.Ephemeral);
+			return messageResponse(`Image uploaded successfully: https://photos.fry.api.lisekilis.dev/${id}`, MessageFlags.Ephemeral);
 
 		default:
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
