@@ -52,15 +52,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 	switch (interaction.data.custom_id) {
 		case 'approve':
 			// fetch the message
-			console.log(JSON.stringify(interaction.message.attachments));
-			console.log(interaction.message);
-			if (!interaction.message.attachments || !interaction.message.attachments[0] || !interaction.message.attachments[0].id)
+			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
-			const attachment = interaction.message.attachments[0];
-			if (!attachment) return messageResponse('The submission lacks a texture, how bizarre!', MessageFlags.Ephemeral);
-			console.log(attachment.url);
+			console.log(embed.image.url);
 			// fetch attachment image
-			const textureResponse = await fetch(attachment.url);
+			const textureResponse = await fetch(embed.image.url);
 
 			if (!textureResponse.ok) {
 				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
@@ -100,7 +96,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			};
 
 			const response = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+				`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`,
 				{
 					method: 'PATCH',
 					headers: {
@@ -131,7 +127,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				...embed,
 				footer: {
 					text: `Denied by <@${interaction.member.user.id}>`,
-					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+					icon_url: `https://cdn.discordapp.com/avatars/${interaction.message.interaction_metadata.id}/${interaction.member.user.avatar}.png`,
 				},
 				timestamp: new Date().toISOString(),
 			};
