@@ -60,7 +60,8 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 						`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`
 					)
 				).json()) as APIMessage
-			).attachments[0].url;
+			).embeds[0].image?.url;
+			if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
 			console.log(newURL);
 			// fetch attachment image
 			const textureResponse = await fetch(newURL);
