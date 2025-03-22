@@ -297,7 +297,7 @@ export async function handleImageUpload(interaction: APIChatInputApplicationComm
 
 	switch (interaction.data.options[0].name) {
 		case 'photo':
-			const attachmentId = interaction.data.options[0].options?.find((option) => option.name === 'attachment')?.value as string;
+			const attachmentId = interaction.data.options[0].options?.find((option) => option.name === 'image')?.value as string;
 			const date = interaction.data.options[0].options?.find((option) => option.name === 'date')?.value as string;
 			if (!attachmentId) return messageResponse('Please provide a valid ID and attachment', MessageFlags.Ephemeral);
 			// Get the attachment
