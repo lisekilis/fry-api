@@ -1,7 +1,7 @@
 // After the exported functions in handlers/discord/commands.ts, add:
 
 import { APIChatInputApplicationCommandGuildInteraction, MessageFlags } from 'discord-api-types/v10';
-import { handlePingCommand, handleConfigCommand, handleSubmissions } from './commands';
+import { handlePingCommand, handleConfigCommand, handleSubmissions, handleImageUpload } from './commands';
 import { messageResponse } from './responses';
 
 export async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
@@ -18,6 +18,8 @@ export async function handleApplicationCommand(interaction: APIChatInputApplicat
 			case 'submit':
 				return await handleSubmissions(interaction, env);
 
+			case 'upload':
+				return await handleImageUpload(interaction, env);
 			default:
 				console.log(`Unknown command: ${interaction.data.name}`);
 				return messageResponse(`Command '${interaction.data.name}' not implemented yet.`, MessageFlags.Ephemeral);

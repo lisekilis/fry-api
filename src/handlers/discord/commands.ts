@@ -291,7 +291,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 		return messageResponse('An error occurred while processing your submission', MessageFlags.Ephemeral);
 	}
 }
-export async function handleInageUpload(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+export async function handleImageUpload(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 
