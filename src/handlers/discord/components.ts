@@ -1,4 +1,4 @@
-import { APIMessageComponentInteraction, ImageFormat, MessageFlags } from 'discord-api-types/v10';
+import { APIMessage, APIMessageComponentInteraction, ImageFormat, MessageFlags, MessageType } from 'discord-api-types/v10';
 import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 
@@ -54,9 +54,16 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
-			console.log(embed.image.url);
+			const newURL = (
+				(await (
+					await fetch(
+						`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`
+					)
+				).json()) as APIMessage
+			).attachments[0].url;
+			console.log(newURL);
 			// fetch attachment image
-			const textureResponse = await fetch(embed.image.url);
+			const textureResponse = await fetch(newURL);
 
 			if (!textureResponse.ok) {
 				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
