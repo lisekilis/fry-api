@@ -54,13 +54,18 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
-			const newURL = (
-				(await (
-					await fetch(
-						`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`
-					)
-				).json()) as APIMessage
-			).embeds[0].image?.url;
+			const message = (await (
+				await fetch(
+					`https://discord.com/api/v10/webhooks/${interaction.message.interaction_metadata.id}/${interaction.token}/messages/@original`
+				)
+			).json()) as APIMessage;
+			if (!message.embeds[0].image?.url) return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+			if (!message.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
+			if (!message.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
+			const newURL = message.embeds[0].image?.url;
+			if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
+			console.log(newURL);
+			// fetch attachment image
 			if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
 			console.log(newURL);
 			// fetch attachment image
