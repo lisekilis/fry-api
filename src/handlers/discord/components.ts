@@ -1,6 +1,7 @@
 import { APIMessage, APIMessageComponentInteraction, ImageFormat, MessageFlags, MessageType } from 'discord-api-types/v10';
 import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
+import { METHODS } from 'http';
 
 export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
 	if (!isMessageComponentButtonInteraction(interaction)) {
@@ -54,8 +55,17 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+			console.log(env.DISCORD_APP_ID);
+			console.log(interaction.application_id);
 			const messageReResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`
+				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`,
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+					},
+				}
 			);
 			if (!messageReResponse.ok) {
 				console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
