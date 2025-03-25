@@ -55,7 +55,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
 			const messageReResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`
+				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`
 			);
 			if (!messageReResponse.ok) {
 				console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
@@ -107,24 +107,21 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				timestamp: new Date().toISOString(),
 			};
 
-			const response = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						embeds: [newEmbed],
-						components: [],
-						attachments: [
-							{
-								id: interaction.message.attachments[0].id,
-							},
-						],
-					}),
-				}
-			);
+			const response = await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					embeds: [newEmbed],
+					components: [],
+					attachments: [
+						{
+							id: interaction.message.attachments[0].id,
+						},
+					],
+				}),
+			});
 			console.log(await response.text());
 			if (!response.ok) {
 				console.error(`Error updating message: ${await response.text()}`);
@@ -139,13 +136,13 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				...embed,
 				footer: {
 					text: `Denied by <@${interaction.member.user.id}>`,
-					icon_url: `https://cdn.discordapp.com/avatars/${interaction.message.interaction_metadata.id}/${interaction.member.user.avatar}.png`,
+					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
 				},
 				timestamp: new Date().toISOString(),
 			};
 
 			const denyResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`,
 				{
 					method: 'PATCH',
 					headers: {
