@@ -153,6 +153,8 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					timestamp: new Date().toISOString(),
 				};
 
+				console.log('Denying submission');
+
 				const denyResponse = await fetch(
 					`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
 					{
