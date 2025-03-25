@@ -55,10 +55,13 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
 			const messageReResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`
 			);
-			const message = (await (messageReResponse.ok ? messageReResponse.json() : messageReResponse.json())) as APIMessage;
-			console.log(JSON.stringify(message), 'joe');
+			if (!messageReResponse.ok) {
+				console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
+				return messageResponse(`Failed to fetch the message (${messageReResponse.status})`, MessageFlags.Ephemeral);
+			}
+			const message = (await messageReResponse.json()) as APIMessage;
 			if (!message.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
 			if (!message.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
 			const newURL = message.embeds[0].image?.url;
@@ -107,21 +110,24 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				timestamp: new Date().toISOString(),
 			};
 
-			const response = await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					embeds: [newEmbed],
-					components: [],
-					attachments: [
-						{
-							id: interaction.message.attachments[0].id,
-						},
-					],
-				}),
-			});
+			const response = await fetch(
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+				{
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						embeds: [newEmbed],
+						components: [],
+						attachments: [
+							{
+								id: interaction.message.attachments[0].id,
+							},
+						],
+					}),
+				}
+			);
 			console.log(await response.text());
 			if (!response.ok) {
 				console.error(`Error updating message: ${await response.text()}`);
