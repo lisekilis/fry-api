@@ -54,9 +54,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
-			console.log(JSON.stringify(interaction));
+			console.log(`Fetching message: ${interaction.application_id}/${interaction.token}`);
 			const messageReResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`,
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
 				{
 					method: 'GET',
 					headers: {
@@ -115,21 +115,24 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				timestamp: new Date().toISOString(),
 			};
 
-			const response = await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					embeds: [newEmbed],
-					components: [],
-					attachments: [
-						{
-							id: interaction.message.attachments[0].id,
-						},
-					],
-				}),
-			});
+			const response = await fetch(
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+				{
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						embeds: [newEmbed],
+						components: [],
+						attachments: [
+							{
+								id: interaction.message.attachments[0].id,
+							},
+						],
+					}),
+				}
+			);
 			console.log(await response.text());
 			if (!response.ok) {
 				console.error(`Error updating message: ${await response.text()}`);
@@ -150,7 +153,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			};
 
 			const denyResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`,
+				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
 				{
 					method: 'PATCH',
 					headers: {

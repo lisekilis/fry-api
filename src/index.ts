@@ -39,7 +39,7 @@ async function validateToken(request: Request, env: Env): Promise<boolean> {
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		console.log(env.DISCORD_APP_ID);
+		console.log(`DISCORD_APP_ID:`, env.DISCORD_APP_ID);
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const method = request.method;
