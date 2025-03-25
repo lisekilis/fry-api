@@ -54,6 +54,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+			console.log(interaction);
 			console.log(`${env.DISCORD_APP_ID}`);
 			console.log(`${interaction.application_id}`);
 			const messageReResponse = await fetch(
