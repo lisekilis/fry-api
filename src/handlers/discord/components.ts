@@ -61,13 +61,10 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
 				return messageResponse(`Failed to fetch the message (${messageReResponse.status})`, MessageFlags.Ephemeral);
 			}
-			const message = (await messageReResponse.json()) as APIMessage;
-			if (!message.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
-			if (!message.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
-			const newURL = message.embeds[0].image?.url;
-			if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
-			console.log(newURL);
-			// fetch attachment image
+			const newMessage = (await messageReResponse.json()) as APIMessage;
+			if (!newMessage.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
+			if (!newMessage.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
+			const newURL = newMessage.embeds[0].image?.url;
 			if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
 			console.log(newURL);
 			// fetch attachment image
