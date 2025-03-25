@@ -165,11 +165,6 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 						body: JSON.stringify({
 							embeds: [newEmbedDeny],
 							components: [],
-							attachments: [
-								{
-									id: interaction.message.attachments[0].id,
-								},
-							],
 						}),
 					}
 				);
