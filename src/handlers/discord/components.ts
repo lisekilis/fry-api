@@ -1,7 +1,6 @@
 import { APIMessage, APIMessageComponentInteraction, ImageFormat, MessageFlags, MessageType } from 'discord-api-types/v10';
 import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
-import { METHODS } from 'http';
 
 export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
 	if (!isMessageComponentButtonInteraction(interaction)) {

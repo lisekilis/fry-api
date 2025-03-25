@@ -140,7 +140,7 @@ export async function handleDeleteCommand(interaction: APIChatInputApplicationCo
 export async function handleListImages(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (interaction.data.options?.[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
-	const pillows = env.FRY_PILLOWS.list();
+	const pillows = await env.FRY_PILLOWS.list();
 
 	const type = interaction.data.options?.[0].options?.find((option) => option.name === 'type')?.value as PillowType;
 
@@ -148,15 +148,15 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 		return messageResponse('No pillows found', MessageFlags.Ephemeral);
 	}
 
-	const filteredPillows = pillows.objects.filter((pillow) => pillow.customMetadata.type === type);
+	const filteredPillows = pillows.objects.filter((pillow) => pillow.customMetadata!.type === type);
 
 	const embed: APIEmbed = {
 		title: `${type} Pillows`,
 		description: `List of all ${type} pillows`,
 		color: 0x9469c9,
-		fields: pillows.map((pillow) => ({
-			name: pillow.name,
-			value: `<@${pillow.userId}>`,
+		fields: pillows.objects.map((pillow) => ({
+			name: pillow.customMetadata!.name,
+			value: `<@${pillow.customMetadata!.userId}>`,
 			inline: true,
 		})),
 	};
