@@ -54,9 +54,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 			// fetch the message
 			if (!embed.image || !embed.image.url)
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
-			console.log(interaction);
-			console.log(`${env.DISCORD_APP_ID}`);
-			console.log(`${interaction.application_id}`);
+			console.log(JSON.stringify(interaction));
 			const messageReResponse = await fetch(
 				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`,
 				{
