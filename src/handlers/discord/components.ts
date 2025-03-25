@@ -56,9 +56,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
 			console.log(`Fetching message: ${interaction.application_id}/${interaction.token}`);
 			const promise = fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`);
-			console.log(promise);
+			console.log(`promise:`, promise);
 			const messageReResponse = await promise;
-			console.log(messageReResponse);
+			console.log(`response:`, messageReResponse);
 			if (!messageReResponse.ok) {
 				console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
 				return messageResponse(`Failed to fetch the message (${messageReResponse.status})`, MessageFlags.Ephemeral);
