@@ -51,130 +51,144 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 	switch (interaction.data.custom_id) {
 		case 'approve':
-			// fetch the message
-			if (!embed.image || !embed.image.url)
-				return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
-			console.log(`Fetching message: ${interaction.application_id}/${interaction.token}`);
-			const promise = fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`);
-			console.log(`promise:`, promise);
-			const messageReResponse = await promise;
-			console.log(`response:`, messageReResponse);
-			if (!messageReResponse.ok) {
-				console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
-				return messageResponse(`Failed to fetch the message (${messageReResponse.status})`, MessageFlags.Ephemeral);
-			}
-			const newMessage = (await messageReResponse.json()) as APIMessage;
-			if (!newMessage.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
-			if (!newMessage.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
-			const newURL = newMessage.embeds[0].image?.url;
-			if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
-			console.log(newURL);
-			// fetch attachment image
-			const textureResponse = await fetch(newURL);
-
-			if (!textureResponse.ok) {
-				console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
-				return messageResponse(`Failed to fetch the texture (${textureResponse.status})`, MessageFlags.Ephemeral);
-			}
-
-			// Use the body stream directly
-			const texture = textureResponse.body;
-			if (!texture) {
-				return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
-			}
-
-			await env.FRY_PILLOWS.put(`${user}_${pillowType}`, texture, {
-				httpMetadata: {
-					contentType: 'image/png',
-				},
-				customMetadata: {
-					discordUserId: user.id,
-					discordApproverId: interaction.member.user.id,
-					submittedAt: interaction.message.timestamp,
-					pillowName,
-					pillowType,
-					userName,
-				},
-			});
-
-			const newEmbed = {
-				...embed,
-				image: {
-					url: `https://pillows.fry.api.lisekilis.dev/${user.id}_${pillowType}`,
-				},
-				footer: {
-					text: `Approved by <@${interaction.member.user.id}>`,
-					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-				},
-				timestamp: new Date().toISOString(),
-			};
-
-			const response = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						embeds: [newEmbed],
-						components: [],
-						attachments: [
-							{
-								id: interaction.message.attachments[0].id,
-							},
-						],
-					}),
+			try {
+				// fetch the message
+				if (!embed.image || !embed.image.url)
+					return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+				console.log(`Fetching message: ${interaction.application_id}/${interaction.token}`);
+				const promise = fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`);
+				const messageReResponse = await promise;
+				if (!messageReResponse.ok) {
+					console.error(`Error fetching message: ${messageReResponse.status} - ${await messageReResponse.text()}`);
+					return messageResponse(`Failed to fetch the message (${messageReResponse.status})`, MessageFlags.Ephemeral);
 				}
-			);
-			console.log(await response.text());
-			if (!response.ok) {
-				console.error(`Error updating message: ${await response.text()}`);
+				const newMessage = (await messageReResponse.json()) as APIMessage;
+				if (!newMessage.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
+				if (!newMessage.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
+				const newURL = newMessage.embeds[0].image?.url;
+				if (!newURL) return messageResponse('Failed to get a new texture URL', MessageFlags.Ephemeral);
+				console.log(newURL);
+				// fetch attachment image
+				const textureResponse = await fetch(newURL);
+
+				if (!textureResponse.ok) {
+					console.error(`Error fetching texture: ${textureResponse.status} - ${await textureResponse.text()}`);
+					return messageResponse(`Failed to fetch the texture (${textureResponse.status})`, MessageFlags.Ephemeral);
+				}
+
+				// Use the body stream directly
+				const texture = textureResponse.body;
+				if (!texture) {
+					return messageResponse('Failed to fetch the texture', MessageFlags.Ephemeral);
+				}
+
+				await env.FRY_PILLOWS.put(`${user}_${pillowType}`, texture, {
+					httpMetadata: {
+						contentType: 'image/png',
+					},
+					customMetadata: {
+						discordUserId: user.id,
+						discordApproverId: interaction.member.user.id,
+						submittedAt: interaction.message.timestamp,
+						pillowName,
+						pillowType,
+						userName,
+					},
+				});
+
+				const newEmbed = {
+					...embed,
+					image: {
+						url: `https://pillows.fry.api.lisekilis.dev/${user.id}_${pillowType}`,
+					},
+					footer: {
+						text: `Approved by <@${interaction.member.user.id}>`,
+						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+					},
+					timestamp: new Date().toISOString(),
+				};
+
+				const response = await fetch(
+					`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+					{
+						method: 'PATCH',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							embeds: [newEmbed],
+							components: [],
+							attachments: [
+								{
+									id: interaction.message.attachments[0].id,
+								},
+							],
+						}),
+					}
+				);
+				console.log(await response.text());
+				if (!response.ok) {
+					console.error(`Error updating message: ${await response.text()}`);
+				}
+
+				console.log(`Approving pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
+
+				return messageResponse(`Approved pillow submission: ${pillowName} (${pillowType}) by <@${user.id}>`, MessageFlags.Ephemeral);
+			} catch (error) {
+				console.error('Error in approve flow:', error);
+				return messageResponse(
+					`An error occurred while approving: ${error instanceof Error ? error.message : String(error)}`,
+					MessageFlags.Ephemeral
+				);
 			}
-
-			console.log(`Approving pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
-
-			return messageResponse(`Approved pillow submission: ${pillowName} (${pillowType}) by <@${user.id}>`, MessageFlags.Ephemeral);
 
 		case 'deny':
-			const newEmbedDeny = {
-				...embed,
-				footer: {
-					text: `Denied by <@${interaction.member.user.id}>`,
-					icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-				},
-				timestamp: new Date().toISOString(),
-			};
-
-			const denyResponse = await fetch(
-				`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
+			try {
+				const newEmbedDeny = {
+					...embed,
+					footer: {
+						text: `Denied by <@${interaction.member.user.id}>`,
+						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
 					},
-					body: JSON.stringify({
-						embeds: [newEmbedDeny],
-						components: [],
-						attachments: [
-							{
-								id: interaction.message.attachments[0].id,
-							},
-						],
-					}),
+					timestamp: new Date().toISOString(),
+				};
+
+				const denyResponse = await fetch(
+					`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+					{
+						method: 'PATCH',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							embeds: [newEmbedDeny],
+							components: [],
+							attachments: [
+								{
+									id: interaction.message.attachments[0].id,
+								},
+							],
+						}),
+					}
+				);
+
+				if (!denyResponse.ok) {
+					console.error(`Error updating message: ${await denyResponse.text()}`);
 				}
-			);
 
-			if (!denyResponse.ok) {
-				console.error(`Error updating message: ${await denyResponse.text()}`);
+				console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
+
+				return messageResponse(
+					`Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
+					MessageFlags.Ephemeral
+				);
+			} catch (error) {
+				console.error('Error in deny flow:', error);
+				return messageResponse(
+					`An error occurred while denying: ${error instanceof Error ? error.message : String(error)}`,
+					MessageFlags.Ephemeral
+				);
 			}
-
-			console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
-
-			return messageResponse(
-				`Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
-				MessageFlags.Ephemeral
-			);
 
 		default:
 			return messageResponse('Unknown button interaction', MessageFlags.Ephemeral);
