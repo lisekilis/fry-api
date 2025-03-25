@@ -58,8 +58,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${interaction.token}/messages/@original`
 			);
 			const message = (await (messageReResponse.ok ? messageReResponse.json() : messageReResponse.json())) as APIMessage;
-			console.log(JSON.stringify(message));
-			if (!message.embeds[0].image?.url) return messageResponse('The submission lacks attachments, how bizarre!', MessageFlags.Ephemeral);
+			console.log(JSON.stringify(message), 'joe');
 			if (!message.embeds) return messageResponse('The new message lacks an embed', MessageFlags.Ephemeral);
 			if (!message.embeds[0].image?.url) return messageResponse('The new message lacks an image attachment', MessageFlags.Ephemeral);
 			const newURL = message.embeds[0].image?.url;
