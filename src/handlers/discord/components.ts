@@ -10,6 +10,7 @@ import {
 import { messageResponse, updateResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 import { updateRequest } from './requests';
+import { json } from 'stream/consumers';
 
 export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
 	if (!isMessageComponentButtonInteraction(interaction)) {
@@ -92,6 +93,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					timestamp: new Date().toISOString(),
 				};
 				console.log('editing message!');
+				console.log(JSON.stringify(newEmbedApprove));
 				// We need to ensure image URLs are valid and attachments are properly handled
 				const approveResponse = await fetch(
 					RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token),
@@ -104,6 +106,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 							interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
 					})
 				);
+				console.log('edited message!');
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
 					return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
