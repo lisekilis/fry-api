@@ -218,6 +218,10 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				if (!response.ok) {
 					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 				}
+
+				// Clone the response before using it to avoid the "Body already used" error
+				const responseClone = response.clone();
+
 				// upload the pillow to r2
 				await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${pillowType}`, response.body, {
 					httpMetadata: {
@@ -284,7 +288,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 						},
 					],
 					{
-						data: await response.arrayBuffer(),
+						data: await responseClone.arrayBuffer(), // Use the cloned response here
 						filename: `${interaction.member.user.id}_${pillowType}.png`,
 						contentType: 'image/png',
 					}
