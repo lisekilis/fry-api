@@ -131,6 +131,7 @@ export async function handleMessageComponent(
 						},
 					} as RESTPostAPIInteractionCallbackJSONBody),
 				});
+				console.log(approveResponse.status);
 				console.log(await approveResponse.text());
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
