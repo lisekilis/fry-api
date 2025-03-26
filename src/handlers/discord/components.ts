@@ -90,11 +90,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 						content: '',
 						embeds: [newEmbedApprove],
 						components: [],
-						attachments: [
-							{
-								id: interaction.message.attachments[0].id,
-							},
-						],
+						attachments: interaction.message.attachments,
 					})
 				);
 				if (!approveResponse.ok) {
