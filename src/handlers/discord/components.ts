@@ -83,18 +83,24 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				const newEmbedApprove = {
 					...embed,
 					footer: {
-						text: `Approved by <@${interaction.member.user.id}>`,
-						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+						text: `Approved by ${interaction.member.user.username}`, // Remove the <@id> formatting
+						icon_url: interaction.member.user.avatar
+							? `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`
+							: undefined,
 					},
 					timestamp: new Date().toISOString(),
 				};
+
+				// We need to ensure image URLs are valid and attachments are properly handled
 				const approveResponse = await fetch(
 					RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token),
 					updateRequest({
 						content: '',
 						embeds: [newEmbedApprove],
 						components: [],
-						attachments: interaction.message.attachments,
+						// Only include attachments if they exist
+						attachments:
+							interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
 					})
 				);
 				if (!approveResponse.ok) {
@@ -123,7 +129,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					...embed,
 					footer: {
 						text: `Denied by <@${interaction.member.user.id}>`,
-						icon_url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
+						icon_url: interaction.member.user.avatar
+							? `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`
+							: undefined,
 					},
 					timestamp: new Date().toISOString(),
 				};
@@ -134,7 +142,8 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 						content: '',
 						embeds: [newEmbedDeny],
 						components: [],
-						attachments: interaction.message.attachments,
+						attachments:
+							interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
 					})
 				);
 
