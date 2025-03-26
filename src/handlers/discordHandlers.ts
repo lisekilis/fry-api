@@ -12,7 +12,7 @@ import { verifyKey } from 'discord-interactions';
 import { isGuildInteraction } from 'discord-api-types/utils';
 
 // Discord webhook handler
-export async function handleDiscordInteractions(request: Request, env: Env): Promise<Response> {
+export async function handleDiscordInteractions(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 	// Verify the request is from Discord
 	const signature = request.headers.get('X-Signature-Ed25519');
 	const timestamp = request.headers.get('X-Signature-Timestamp');
@@ -49,7 +49,7 @@ export async function handleDiscordInteractions(request: Request, env: Env): Pro
 			return messageResponse('Invalid interaction type or missing guild_id');
 
 		case InteractionType.MessageComponent:
-			return await handleMessageComponent(interaction, env);
+			return await handleMessageComponent(interaction, env, ctx);
 
 		default:
 			return messageResponse(`Interaction type not supported: ${interaction.type}`);

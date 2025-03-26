@@ -13,7 +13,11 @@ import { messageResponse, updateResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 import { json } from 'stream/consumers';
 
-export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
+export async function handleMessageComponent(
+	interaction: APIMessageComponentInteraction,
+	env: Env,
+	ctx: ExecutionContext
+): Promise<Response> {
 	if (!isMessageComponentButtonInteraction(interaction)) {
 		return messageResponse('Only buttons are supported', MessageFlags.Ephemeral);
 	}
@@ -72,18 +76,26 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				const pillowData = await pillow.arrayBuffer();
 
 				// Upload the pillow to the pillow bucket
-				await env.FRY_PILLOWS.put(pillowId, pillowData, {
-					httpMetadata: pillow.httpMetadata,
-					customMetadata: {
-						...pillow.customMetadata,
-						discordApproverId: interaction.member.user.id,
-						submittedAt: pillow.uploaded.toISOString(),
-					},
-				});
+				ctx.waitUntil(
+					env.FRY_PILLOWS.put(pillowId, pillowData, {
+						httpMetadata: pillow.httpMetadata,
+						customMetadata: {
+							...pillow.customMetadata,
+							discordApproverId: interaction.member.user.id,
+							submittedAt: pillow.uploaded.toISOString(),
+						},
+					}).catch((error) => {
+						console.error('Error uploading pillow:', error);
+					})
+				);
 
 				const pillowUrl = `https://pillows.fry.api.lisekilis.dev/${pillowId}`;
 
-				await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
+				ctx.waitUntil(
+					env.FRY_PILLOW_SUBMISSIONS.delete(pillowId).catch((error) => {
+						console.error('Error uploading pillow:', error);
+					})
+				);
 				console.log('delted pillow submission');
 				const newEmbedApprove = {
 					...embed,
@@ -99,6 +111,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					timestamp: new Date().toISOString(),
 				} as APIEmbed;
 				// We need to ensure image URLs are valid and attachments are properly handled
+
 				const approveResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 					method: 'POST',
 					headers: {
@@ -115,7 +128,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 						},
 					}),
 				});
-				console.log(JSON.stringify(approveResponse));
+				console.log(await approveResponse.text());
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
 					return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
@@ -143,7 +156,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 		case 'deny':
 			try {
 				// delete the submission
-				await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
+				ctx.waitUntil(
+					env.FRY_PILLOW_SUBMISSIONS.delete(pillowId).catch((error) => {
+						console.error('Error uploading pillow:', error);
+					})
+				);
 
 				const newEmbedDeny = {
 					...embed,
