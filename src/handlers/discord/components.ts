@@ -1,4 +1,5 @@
 import {
+	APIEmbed,
 	APIMessage,
 	APIMessageComponentInteraction,
 	ImageFormat,
@@ -80,10 +81,15 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					},
 				});
 
+				const pillowUrl = `https://pillows.fry.api.lisekilis.dev/${pillowId}`;
+
 				await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
 				console.log('delted pillow submission');
 				const newEmbedApprove = {
 					...embed,
+					image: {
+						url: pillowUrl,
+					},
 					footer: {
 						text: `Approved by <@${interaction.member.user.id}>`,
 						icon_url: interaction.member.user.avatar
@@ -91,9 +97,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 							: undefined,
 					},
 					timestamp: new Date().toISOString(),
-				};
-				console.log('editing message!');
-				console.log(JSON.stringify(newEmbedApprove));
+				} as APIEmbed;
 				// We need to ensure image URLs are valid and attachments are properly handled
 				const approveResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 					method: 'POST',
@@ -106,21 +110,26 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 							content: '',
 							embeds: [newEmbedApprove],
 							components: [],
-							attachments:
-								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
 						},
 					}),
 				});
-				console.log('edited message!');
+
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
 					return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
 				}
-				return messageResponse(
-					`Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>
-						[View Pillow](https://pillows.fry.api.lisekilis.dev/${pillowId})`,
-					MessageFlags.Ephemeral
-				);
+
+				const confirmResponse = await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+					body: JSON.stringify({
+						content: `Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>
+						[View Pillow](${pillowUrl})`,
+					}),
+					method: 'POST',
+				});
+
+				if (!confirmResponse.ok) throw new Error(await confirmResponse.text());
+
+				return new Response(undefined, { status: 202 });
 			} catch (error) {
 				console.error('Error in approve flow:', error);
 				return messageResponse(
