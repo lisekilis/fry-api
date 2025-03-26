@@ -1,7 +1,9 @@
 import {
 	APIActionRowComponent,
 	APIEmbed,
+	APIInteractionResponseCallbackData,
 	APIInteractionResponseChannelMessageWithSource,
+	APIInteractionResponseUpdateMessage,
 	APIMessageActionRowComponent,
 	InteractionResponseType,
 	MessageFlags,
@@ -63,6 +65,13 @@ export function embedResponse(
 	}
 
 	return new Response(JSON.stringify(response), {
+		status: 200,
+		headers: { 'Content-Type': 'application/json' },
+	});
+}
+
+export function updateResponse(response: APIInteractionResponseCallbackData): Response {
+	return new Response(JSON.stringify({ ...response, type: InteractionResponseType.UpdateMessage }), {
 		status: 200,
 		headers: { 'Content-Type': 'application/json' },
 	});

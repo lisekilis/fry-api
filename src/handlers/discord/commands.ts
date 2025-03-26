@@ -218,6 +218,18 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				if (!response.ok) {
 					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 				}
+				// upload the pillow to r2
+				await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${pillowType}`, response.body, {
+					httpMetadata: {
+						contentType: 'image/png',
+					},
+					customMetadata: {
+						userId: interaction.member.user.id,
+						username,
+						name: pillowName,
+						type: pillowType,
+					},
+				});
 
 				// Create embed for the submission
 				const fields: APIEmbedField[] = [

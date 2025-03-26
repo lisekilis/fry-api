@@ -18,6 +18,10 @@
 		{
 			"binding": "FRY_PHOTOS",
 			"bucket_name": "fry-photos"
+		},
+		{
+			"binding": "FRY_PILLOW_SUBMISSIONS",
+			"bucket_name": "fry-pillow-submissions"
 		}
 	],
 	"kv_namespaces": [
