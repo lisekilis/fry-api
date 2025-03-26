@@ -127,7 +127,6 @@ export async function handleMessageComponent(
 							components: [],
 							attachments:
 								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
-							with_response: true,
 						},
 					} as RESTPostAPIInteractionCallbackJSONBody),
 				});
