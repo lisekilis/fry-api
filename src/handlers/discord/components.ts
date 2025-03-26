@@ -2,6 +2,7 @@ import {
 	APIMessage,
 	APIMessageComponentInteraction,
 	ImageFormat,
+	InteractionResponseType,
 	MessageFlags,
 	MessageType,
 	RouteBases,
@@ -9,7 +10,6 @@ import {
 } from 'discord-api-types/v10';
 import { messageResponse, updateResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
-import { updateRequest } from './requests';
 import { json } from 'stream/consumers';
 
 export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
@@ -95,17 +95,22 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				console.log('editing message!');
 				console.log(JSON.stringify(newEmbedApprove));
 				// We need to ensure image URLs are valid and attachments are properly handled
-				const approveResponse = await fetch(
-					RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token),
-					updateRequest({
-						content: '',
-						embeds: [newEmbedApprove],
-						components: [],
-						// Only include attachments if they exist
-						attachments:
-							interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
-					})
-				);
+				const approveResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						type: InteractionResponseType.UpdateMessage,
+						data: {
+							content: '',
+							embeds: [newEmbedApprove],
+							components: [],
+							attachments:
+								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
+						},
+					}),
+				});
 				console.log('edited message!');
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
@@ -140,16 +145,22 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 					timestamp: new Date().toISOString(),
 				};
 
-				const denyResponse = await fetch(
-					RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token),
-					updateRequest({
-						content: '',
-						embeds: [newEmbedDeny],
-						components: [],
-						attachments:
-							interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
-					})
-				);
+				const denyResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						type: InteractionResponseType.UpdateMessage,
+						data: {
+							content: '',
+							embeds: [newEmbedDeny],
+							components: [],
+							attachments:
+								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
+						},
+					}),
+				});
 
 				if (!denyResponse.ok) {
 					console.error(`Error updating message: ${await denyResponse.text()}`);
