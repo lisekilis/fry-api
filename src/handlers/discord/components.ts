@@ -6,6 +6,7 @@ import {
 	InteractionResponseType,
 	MessageFlags,
 	MessageType,
+	RESTPostAPIInteractionCallbackJSONBody,
 	RouteBases,
 	Routes,
 } from 'discord-api-types/v10';
@@ -107,6 +108,7 @@ export async function handleMessageComponent(
 						icon_url: interaction.member.user.avatar
 							? `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`
 							: undefined,
+						with_response: true,
 					},
 					timestamp: new Date().toISOString(),
 				} as APIEmbed;
@@ -125,8 +127,9 @@ export async function handleMessageComponent(
 							components: [],
 							attachments:
 								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
+							with_response: true,
 						},
-					}),
+					} as RESTPostAPIInteractionCallbackJSONBody),
 				});
 				console.log(await approveResponse.text());
 				if (!approveResponse.ok) {
@@ -190,7 +193,7 @@ export async function handleMessageComponent(
 							attachments:
 								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
 						},
-					}),
+					} as RESTPostAPIInteractionCallbackJSONBody),
 				});
 
 				if (!denyResponse.ok) {
