@@ -88,10 +88,10 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				const newEmbedApprove = {
 					...embed,
 					image: {
-						url: pillowUrl,
+						url: `attachment://${pillowId}.png`,
 					},
 					footer: {
-						text: `Approved by <@${interaction.member.user.id}>`,
+						text: `Approved by ${interaction.member.user.username}`,
 						icon_url: interaction.member.user.avatar
 							? `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`
 							: undefined,
@@ -110,10 +110,12 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 							content: '',
 							embeds: [newEmbedApprove],
 							components: [],
+							attachments:
+								interaction.message.attachments && interaction.message.attachments.length > 0 ? interaction.message.attachments : undefined,
 						},
 					}),
 				});
-
+				console.log(JSON.stringify(approveResponse));
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
 					return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
@@ -145,6 +147,9 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 				const newEmbedDeny = {
 					...embed,
+					image: {
+						url: `attachment://${pillowId}.png`,
+					},
 					footer: {
 						text: `Denied by <@${interaction.member.user.id}>`,
 						icon_url: interaction.member.user.avatar
@@ -152,7 +157,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 							: undefined,
 					},
 					timestamp: new Date().toISOString(),
-				};
+				} as APIEmbed;
 
 				const denyResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 					method: 'POST',
