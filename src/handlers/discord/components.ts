@@ -7,6 +7,7 @@ import {
 	MessageFlags,
 	MessageType,
 	RESTPostAPIInteractionCallbackJSONBody,
+	RESTPostAPIInteractionFollowupJSONBody,
 	RouteBases,
 	Routes,
 } from 'discord-api-types/v10';
@@ -97,7 +98,7 @@ export async function handleMessageComponent(
 						console.error('Error uploading pillow:', error);
 					})
 				);
-				console.log('delted pillow submission');
+
 				const newEmbedApprove = {
 					...embed,
 					image: {
@@ -130,19 +131,21 @@ export async function handleMessageComponent(
 						},
 					} as RESTPostAPIInteractionCallbackJSONBody),
 				});
-				console.log(approveResponse.status);
-				console.log(await approveResponse.text());
 				if (!approveResponse.ok) {
 					console.error(`Error updating message: ${await approveResponse.text()}`);
 					return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
 				}
 
 				const confirmResponse = await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
 					body: JSON.stringify({
 						content: `Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>
 						[View Pillow](${pillowUrl})`,
-					}),
-					method: 'POST',
+						flags: MessageFlags.Ephemeral,
+					} as RESTPostAPIInteractionFollowupJSONBody),
 				});
 
 				if (!confirmResponse.ok) throw new Error(await confirmResponse.text());
@@ -198,14 +201,23 @@ export async function handleMessageComponent(
 
 				if (!denyResponse.ok) {
 					console.error(`Error updating message: ${await denyResponse.text()}`);
+					return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
 				}
 
-				console.log(`Denied pillow submission: ${pillowName} (${pillowType}) by ${userName}`);
+				const confirmDenyResponse = await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						content: `Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
+						flags: MessageFlags.Ephemeral,
+					} as RESTPostAPIInteractionFollowupJSONBody),
+				});
 
-				return messageResponse(
-					`Denied pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>`,
-					MessageFlags.Ephemeral
-				);
+				if (!confirmDenyResponse.ok) throw new Error(await confirmDenyResponse.text());
+
+				return new Response(undefined, { status: 202 });
 			} catch (error) {
 				console.error('Error in deny flow:', error);
 				return messageResponse(
