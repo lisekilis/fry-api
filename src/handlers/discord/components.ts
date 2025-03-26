@@ -9,6 +9,7 @@ import {
 } from 'discord-api-types/v10';
 import { messageResponse, updateResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
+import { updateRequest } from './requests';
 
 export async function handleMessageComponent(interaction: APIMessageComponentInteraction, env: Env): Promise<Response> {
 	if (!isMessageComponentButtonInteraction(interaction)) {
@@ -65,7 +66,11 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				if (!pillow) {
 					return messageResponse('The pillow submission was not found', MessageFlags.Ephemeral);
 				}
-				await env.FRY_PILLOWS.put(pillowId, pillow.body, {
+
+				const pillowData = await pillow.arrayBuffer();
+
+				// Upload the pillow to the pillow bucket
+				await env.FRY_PILLOWS.put(pillowId, pillowData, {
 					httpMetadata: pillow.httpMetadata,
 					customMetadata: {
 						...pillow.customMetadata,
@@ -73,9 +78,8 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 						submittedAt: pillow.uploaded.toISOString(),
 					},
 				});
-				// delete the submission
+
 				await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
-				// update the message
 				const newEmbedApprove = {
 					...embed,
 					footer: {
@@ -86,7 +90,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				};
 				const approveResponse = await fetch(
 					RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token),
-					updateResponse({
+					updateRequest({
 						content: '',
 						embeds: [newEmbedApprove],
 						components: [],
@@ -99,7 +103,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 				}
 				return messageResponse(
 					`Approved pillow submission: ${pillowName} (${pillowType}) by <@${interaction.message.interaction_metadata.user.id}>
-					[View Pillow](https://pillows.fry.api.lisekilis.dev/${pillowId})`,
+						[View Pillow](https://pillows.fry.api.lisekilis.dev/${pillowId})`,
 					MessageFlags.Ephemeral
 				);
 			} catch (error) {
@@ -126,7 +130,7 @@ export async function handleMessageComponent(interaction: APIMessageComponentInt
 
 				const denyResponse = await fetch(
 					RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token),
-					updateResponse({
+					updateRequest({
 						content: '',
 						embeds: [newEmbedDeny],
 						components: [],

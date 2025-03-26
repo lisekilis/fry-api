@@ -219,21 +219,28 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 				}
 
-				// Clone the response before using it to avoid the "Body already used" error
-				const responseClone = response.clone();
+				const imageBuffer = await response.arrayBuffer();
 
 				// upload the pillow to r2
-				await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${pillowType}`, response.body, {
-					httpMetadata: {
-						contentType: 'image/png',
-					},
-					customMetadata: {
-						userId: interaction.member.user.id,
-						username,
-						name: pillowName,
-						type: pillowType,
-					},
-				});
+				try {
+					await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${pillowType}`, imageBuffer, {
+						httpMetadata: {
+							contentType: 'image/png',
+						},
+						customMetadata: {
+							userId: interaction.member.user.id,
+							username,
+							name: pillowName,
+							type: pillowType,
+						},
+					});
+				} catch (error) {
+					console.error('R2 upload error:', error);
+					return messageResponse(
+						`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+						MessageFlags.Ephemeral
+					);
+				}
 
 				// Create embed for the submission
 				const fields: APIEmbedField[] = [
@@ -288,7 +295,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 						},
 					],
 					{
-						data: await responseClone.arrayBuffer(), // Use the cloned response here
+						data: imageBuffer,
 						filename: `${interaction.member.user.id}_${pillowType}.png`,
 						contentType: 'image/png',
 					}
