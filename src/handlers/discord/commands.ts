@@ -125,14 +125,23 @@ export async function handleDeleteCommand(interaction: APIChatInputApplicationCo
 
 	switch (interaction.data.options[0].name) {
 		case 'pillow':
-			const id = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
-			if (!id) return messageResponse('Please provide a valid ID', MessageFlags.Ephemeral);
+			const pillowId = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
+			if (!pillowId) return messageResponse('Please provide a valid ID', MessageFlags.Ephemeral);
 			try {
-				await env.FRY_PILLOWS.delete(id);
+				await env.FRY_PILLOWS.delete(pillowId);
 			} catch (error) {
 				return messageResponse('Failed to delete pillow', MessageFlags.Ephemeral);
 			}
 			return messageResponse('Pillow deleted successfully', MessageFlags.Ephemeral);
+		case 'photo':
+			const photoId = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
+			if (!photoId) return messageResponse('Please provide a valid ID', MessageFlags.Ephemeral);
+			try {
+				await env.FRY_PHOTOS.delete(photoId);
+			} catch (error) {
+				return messageResponse('Failed to delete photo', MessageFlags.Ephemeral);
+			}
+			return messageResponse('Photo deleted successfully', MessageFlags.Ephemeral);
 		default:
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
 	}
@@ -140,28 +149,59 @@ export async function handleDeleteCommand(interaction: APIChatInputApplicationCo
 export async function handleListImages(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (interaction.data.options?.[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
-	const pillows = await env.FRY_PILLOWS.list();
 
-	const type = interaction.data.options?.[0].options?.find((option) => option.name === 'type')?.value as PillowType;
+	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+	const parsedSettings = settings ? JSON.parse(settings) : {};
+	const pageSize = interaction.data.options[0].options?.find((option) => option.name === 'count')?.value as number | 10;
+	switch (interaction.data.options[0].name) {
+		case 'pillows':
+			if (!parsedSettings.pillowChannelId)
+				return messageResponse(
+					'The pillow submissions channel has not been configured. Please ask an admin to set it up.',
+					MessageFlags.Ephemeral
+				);
+			const pillows = await env.FRY_PILLOWS.list();
+			if (!pillows.objects) return messageResponse('No pillows found', MessageFlags.Ephemeral);
+			const pillowList = pillows.objects.map((pillow) => {
+				const metadata = pillow.customMetadata!;
+				return `**${metadata.name}** - ${metadata.type} by <@${metadata.userId}>`;
+			});
+			const pages = Math.ceil(pillowList.length / pageSize);
+			const components =
+				pages > 1
+					? [
+							{
+								type: ComponentType.ActionRow,
+								components: [
+									{
+										type: ComponentType.Button,
+										style: ButtonStyle.Primary,
+										label: 'Previous',
+										custom_id: 'previous',
+										disabled: true,
+									},
+									{
+										type: ComponentType.Button,
+										style: ButtonStyle.Primary,
+										label: 'Next',
+										custom_id: 'next',
+									},
+								],
+							},
+					  ]
+					: undefined;
 
-	if (!pillows.objects) {
-		return messageResponse('No pillows found', MessageFlags.Ephemeral);
+			return messageResponse(pillowList.join('\n'), MessageFlags.Ephemeral);
+
+		case 'photos':
+			if (!parsedSettings.photoChannelId)
+				return messageResponse('The photo channel has not been configured. Please ask an admin to set it up.', MessageFlags.Ephemeral);
+			const photos = await env.FRY_PHOTOS.list();
+			if (!photos.objects) return messageResponse('No photos found', MessageFlags.Ephemeral);
+
+		default:
+			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
 	}
-
-	const filteredPillows = pillows.objects.filter((pillow) => pillow.customMetadata!.type === type);
-
-	const embed: APIEmbed = {
-		title: `${type} Pillows`,
-		description: `List of all ${type} pillows`,
-		color: 0x9469c9,
-		fields: pillows.objects.map((pillow) => ({
-			name: pillow.customMetadata!.name,
-			value: `<@${pillow.customMetadata!.userId}>`,
-			inline: true,
-		})),
-	};
-
-	return embedResponse(embed);
 }
 export async function handleSubmissions(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	// Guard conditions - ensure we have proper subcommand

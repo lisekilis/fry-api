@@ -174,7 +174,7 @@ export async function handleMessageComponent(
 						url: `attachment://${pillowId}.png`,
 					},
 					footer: {
-						text: `Denied by <@${interaction.member.user.id}>`,
+						text: `Denied by ${interaction.member.user.username}`,
 						icon_url: interaction.member.user.avatar
 							? `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`
 							: undefined,
