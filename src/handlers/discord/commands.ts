@@ -15,7 +15,7 @@ import { messageResponse, embedResponse } from './responses';
 import { PhotoR2Object, PhotoR2Objects, PillowR2Objects, PillowType } from '../../types';
 import { patchSettings } from '../settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
-import { paginationButtons, listPillowsEmbed } from './util';
+import { paginationButtons, listPillowsEmbed, listPhotosEmbed } from './util';
 
 export function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	const startTime = getTimestamp(`${BigInt(interaction.id)}`);
@@ -177,6 +177,11 @@ export async function handleListCommand(interaction: APIChatInputApplicationComm
 				return messageResponse('The photo channel has not been configured. Please ask an admin to set it up.', MessageFlags.Ephemeral);
 			const photos = await env.FRY_PHOTOS.list();
 			if (!photos.objects) return messageResponse('No photos found', MessageFlags.Ephemeral);
+			const photoCount = photos.objects.length;
+			const photoPageCount = Math.ceil(photoCount / pageSize);
+			const photoComponents = paginationButtons(pageSize, 1, photoPageCount);
+			const photoEmbed = listPhotosEmbed(photos as PhotoR2Objects, 1, pageSize, photoPageCount, photoCount);
+			return embedResponse(photoEmbed, `Found ${photoCount} photos`, undefined, photoComponents);
 
 		default:
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
