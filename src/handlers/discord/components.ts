@@ -15,6 +15,7 @@ import {
 import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 import { listPhotosEmbed, listPillowsEmbed, paginationButtons } from './util';
+import { PhotoR2Objects, PillowR2Objects } from '../../types';
 
 export async function handleMessageComponent(
 	interaction: APIMessageComponentInteraction,
@@ -256,8 +257,8 @@ async function handlePaginationButtons(interaction: APIMessageComponentButtonInt
 
 	const newEmbed =
 		type === 'pillows'
-			? listPillowsEmbed(images, page.next, page.size, page.count, images.objects.length)
-			: listPhotosEmbed(images, page.next, page.size, page.count, images.objects.length);
+			? listPillowsEmbed(images as PillowR2Objects, page.next, page.size, page.count, images.objects.length)
+			: listPhotosEmbed(images as PhotoR2Objects, page.next, page.size, page.count, images.objects.length);
 
 	const newComponents = paginationButtons(page.size, page.next, page.count);
 

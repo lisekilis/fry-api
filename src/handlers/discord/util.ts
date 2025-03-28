@@ -1,4 +1,5 @@
 import { APIActionRowComponent, APIEmbed, APIMessageActionRowComponent, ButtonStyle, ComponentType } from 'discord-api-types/v10';
+import { PhotoR2Objects, PillowR2Objects } from '../../types';
 
 export function paginationButtons(
 	pageSize: number,
@@ -28,10 +29,16 @@ export function paginationButtons(
 	];
 }
 
-export function listPillowsEmbed(pillows: R2Objects, page: number, pageSize: number, pageCount: number, pillowCount: number): APIEmbed {
+export function listPillowsEmbed(
+	pillows: PillowR2Objects,
+	page: number,
+	pageSize: number,
+	pageCount: number,
+	pillowCount: number
+): APIEmbed {
 	return {
 		title: 'Here are the pillows',
-		description: `Showing ${pageSize}/${pageCount} of ${pillowCount} submissions`,
+		description: `Showing page ${page}/${pageCount} out of ${pillowCount} submissions`,
 		fields: [
 			{
 				name: 'Name',
@@ -64,7 +71,7 @@ export function listPillowsEmbed(pillows: R2Objects, page: number, pageSize: num
 		color: 0x9469c9,
 	};
 }
-export function listPhotosEmbed(photos: R2Objects, page: number, pageSize: number, pageCount: number, photoCount: number): APIEmbed {
+export function listPhotosEmbed(photos: PhotoR2Objects, page: number, pageSize: number, pageCount: number, photoCount: number): APIEmbed {
 	return {
 		title: 'Here are the photos',
 		description: `Showing ${pageSize}/${pageCount} of ${photoCount} group photos`,

@@ -12,7 +12,7 @@ import {
 	MessageFlags,
 } from 'discord-api-types/v10';
 import { messageResponse, embedResponse } from './responses';
-import { PillowType } from '../../types';
+import { PhotoR2Object, PillowR2Objects, PillowType } from '../../types';
 import { patchSettings } from '../settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
 import { paginationButtons, listPillowsEmbed } from './util';
@@ -150,7 +150,7 @@ export async function handleDeleteCommand(interaction: APIChatInputApplicationCo
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
 	}
 }
-export async function handleListImages(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+export async function handleListCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (interaction.data.options?.[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 
@@ -169,7 +169,7 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 			const pillowCount = pillows.objects.length;
 			const pageCount = Math.ceil(pillowCount / pageSize);
 			const components = paginationButtons(pageSize, 1, pageCount);
-			const embed = listPillowsEmbed(pillows, 1, pageSize, pageCount, pillowCount);
+			const embed = listPillowsEmbed(pillows as PillowR2Objects, 1, pageSize, pageCount, pillowCount);
 			return embedResponse(embed, `Found ${pillowCount} pillows`, undefined, components);
 
 		case 'photos':
@@ -182,7 +182,7 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
 	}
 }
-export async function handleSubmissions(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+export async function handleSubmitCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	// Guard conditions - ensure we have proper subcommand
 	if (!interaction.data.options?.[0]) return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 
@@ -222,7 +222,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				const pillowName = nameOption.value as string;
 				const pillowType = typeOption.value as PillowType;
 				const attachmentId = textureOption.value as string;
-				const username = (usernameOption?.value as string) || interaction.member.user.username;
+				const userName = (usernameOption?.value as string) || interaction.member.user.username;
 
 				// Get the attached texture
 				const attachment = interaction.data.resolved?.attachments?.[attachmentId];
@@ -248,7 +248,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 						},
 						customMetadata: {
 							userId: interaction.member.user.id,
-							username,
+							userName,
 							name: pillowName,
 							type: pillowType,
 						},
@@ -276,7 +276,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 				];
 
 				const embed: APIEmbed = {
-					title: `${username}'s Pillow Submission`,
+					title: `${userName}'s Pillow Submission`,
 					description: `A new pillow submission has been received from <@${interaction.member.user.id}>`,
 					thumbnail: {
 						url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
@@ -333,7 +333,7 @@ export async function handleSubmissions(interaction: APIChatInputApplicationComm
 		return messageResponse('An error occurred while processing your submission', MessageFlags.Ephemeral);
 	}
 }
-export async function handleImageUpload(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+export async function handleUploadCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
 	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
 		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
 	const id = crypto.randomUUID();
@@ -353,13 +353,12 @@ export async function handleImageUpload(interaction: APIChatInputApplicationComm
 			const response = await fetch(attachment.url);
 			if (!response.ok) return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 
-			// Update the pillow
 			await env.FRY_PHOTOS.put(id, response.body, {
 				httpMetadata: {
 					contentType: 'image/png',
 				},
 				customMetadata: {
-					discordUserId: interaction.member.user.id,
+					userId: interaction.member.user.id,
 					submittedAt: new Date(getTimestamp(`${BigInt(interaction.id)}`)).toISOString(),
 					// set date to last friday
 					date:
@@ -397,6 +396,100 @@ export async function handleImageUpload(interaction: APIChatInputApplicationComm
 			});
 
 			return messageResponse(`Image uploaded successfully: https://photos.fry.api.lisekilis.dev/${id}`, MessageFlags.Ephemeral);
+
+		default:
+			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
+	}
+}
+export async function handleViewCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+	if (!interaction.data.options?.[0] || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
+		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
+
+	switch (interaction.data.options[0].name) {
+		case 'pillow':
+			const list = (await env.FRY_PILLOWS.list({ include: ['customMetadata'] })) as PillowR2Objects;
+			const pillowUserId = interaction.data.options[0].options?.find((option) => option.name === 'user')?.value as string;
+			const pillowType = interaction.data.options[0].options?.find((option) => option.name === 'type')?.value as PillowType;
+
+			// Get ID from parameters or select a random one if available
+			let id;
+			if (pillowUserId && pillowType) {
+				id = `${pillowUserId}_${pillowType}`;
+			} else {
+				id = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
+
+				// If no ID provided, pick a random pillow
+				if (!id && list.objects && list.objects.length > 0) {
+					const randomIndex = Math.floor(Math.random() * list.objects.length);
+					id = list.objects[randomIndex].key;
+				}
+			}
+
+			// Fetch the pillow with the determined ID
+			const pillow = id ? await env.FRY_PILLOWS.get(id) : null;
+			if (!pillow) return messageResponse('Pillow not found', MessageFlags.Ephemeral);
+
+			// Find the pillow object with matching key
+			const pillowObject = list.objects.find((obj) => obj.key === id);
+			if (!pillowObject) return messageResponse('Pillow metadata not found', MessageFlags.Ephemeral);
+
+			const embed = {
+				title: pillowObject.customMetadata?.name || `Unknown Pillow`,
+				description: `${pillowObject.customMetadata?.userName}'s pillow ID: ${id}, submitted by <@${pillowObject.customMetadata?.userId}>`,
+				image: {
+					url: `https://pillows.fry.api.lisekilis.dev/${id}`,
+				},
+				fields: [
+					{
+						name: 'Submitted At',
+						value: pillowObject.customMetadata?.submittedAt
+							? `<t:${new Date(pillowObject.customMetadata.submittedAt).getTime() / 1000}:F>`
+							: 'Unknown',
+						inline: true,
+					},
+					{
+						name: 'Approved by',
+						value: pillowObject.customMetadata?.approverId ? `<@${pillowObject.customMetadata.approverId}>` : 'Unknown',
+						inline: true,
+					},
+				],
+				footer: {
+					text: 'Click on the image to view the pillow',
+				},
+				color: 0x9469c9,
+			};
+			return embedResponse(embed, 'Pillow details', MessageFlags.Ephemeral);
+
+		case 'photo':
+			const photoId = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
+			if (!photoId) return messageResponse('Please provide a valid ID', MessageFlags.Ephemeral);
+			const photo = (await env.FRY_PHOTOS.get(photoId)) as PhotoR2Object;
+			if (!photo) return messageResponse('Photo not found', MessageFlags.Ephemeral);
+
+			const photoEmbed = {
+				title: 'Group Photo',
+				description: `Photo ID: ${photoId}, submitted by <@${photo.customMetadata?.userId}>`,
+				image: {
+					url: `https://photos.fry.api.lisekilis.dev/${photoId}`,
+				},
+				fields: [
+					{
+						name: 'Submitted At',
+						value: photo.customMetadata?.submittedAt ? `<t:${new Date(photo.customMetadata.submittedAt).getTime() / 1000}:F>` : 'Unknown',
+						inline: true,
+					},
+					{
+						name: 'Date',
+						value: photo.customMetadata?.date || 'Unknown',
+						inline: true,
+					},
+				],
+				footer: {
+					text: 'Click on the image to view the photo',
+				},
+				color: 0x9469c9,
+			};
+			return embedResponse(photoEmbed, 'Photo details', MessageFlags.Ephemeral);
 
 		default:
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);

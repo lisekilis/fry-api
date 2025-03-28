@@ -4,10 +4,11 @@ import { APIChatInputApplicationCommandGuildInteraction, MessageFlags } from 'di
 import {
 	handlePingCommand,
 	handleConfigCommand,
-	handleSubmissions,
-	handleImageUpload,
-	handleListImages,
+	handleSubmitCommand,
+	handleUploadCommand,
+	handleListCommand,
 	handleDeleteCommand,
+	handleViewCommand,
 } from './commands';
 import { messageResponse } from './responses';
 
@@ -23,16 +24,19 @@ export async function handleApplicationCommand(interaction: APIChatInputApplicat
 				return await handleConfigCommand(interaction, env);
 
 			case 'submit':
-				return await handleSubmissions(interaction, env);
+				return await handleSubmitCommand(interaction, env);
 
 			case 'upload':
-				return await handleImageUpload(interaction, env);
+				return await handleUploadCommand(interaction, env);
 
 			case 'list':
-				return await handleListImages(interaction, env);
+				return await handleListCommand(interaction, env);
 
 			case 'delete':
 				return await handleDeleteCommand(interaction, env);
+
+			case 'view':
+				return await handleViewCommand(interaction, env);
 
 			default:
 				console.log(`Unknown command: ${interaction.data.name}`);
