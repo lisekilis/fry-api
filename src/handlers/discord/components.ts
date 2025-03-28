@@ -13,7 +13,6 @@ import {
 } from 'discord-api-types/v10';
 import { messageResponse, updateResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
-import { json } from 'stream/consumers';
 
 export async function handleMessageComponent(
 	interaction: APIMessageComponentInteraction,

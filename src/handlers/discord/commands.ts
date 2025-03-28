@@ -174,17 +174,17 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 				fields: [
 					{
 						name: 'Name',
-						value: `[${pillows.objects
+						value: pillows.objects
 							.slice(0, pageSize)
-							.map((pillow) => pillow.customMetadata!.name)
-							.join('\n')}](https://pillows.fry.api.lisekilis.dev/${pillows.objects.slice(0, pageSize).map((pillow) => pillow.key)})`,
+							.map((pillow) => pillow.customMetadata?.name)
+							.join('\n'),
 						inline: true,
 					},
 					{
 						name: 'Type',
 						value: pillows.objects
 							.slice(0, pageSize)
-							.map((pillow) => pillow.customMetadata!.type)
+							.map((pillow) => pillow.customMetadata?.type)
 							.join('\n'),
 						inline: true,
 					},
@@ -192,7 +192,7 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 						name: 'Creator',
 						value: `<@${pillows.objects
 							.slice(0, pageSize)
-							.map((pillow) => pillow.customMetadata!.userId)
+							.map((pillow) => pillow.customMetadata?.userId)
 							.join('\n')}>`,
 						inline: true,
 					},
