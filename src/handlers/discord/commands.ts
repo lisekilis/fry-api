@@ -486,7 +486,9 @@ export async function handleViewCommand(interaction: APIChatInputApplicationComm
 				fields: [
 					{
 						name: 'Submitted At',
-						value: photo.customMetadata?.submittedAt ? `<t:${new Date(photo.customMetadata.submittedAt).getTime() / 1000}:F>` : 'Unknown',
+						value: photo.customMetadata?.submittedAt
+							? `<t:${Math.floor(new Date(photo.customMetadata.submittedAt).getTime() / 1000)}:F>`
+							: 'Unknown',
 						inline: true,
 					},
 					{
