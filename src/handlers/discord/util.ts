@@ -74,21 +74,21 @@ export function listPillowsEmbed(
 export function listPhotosEmbed(photos: PhotoR2Objects, page: number, pageSize: number, pageCount: number, photoCount: number): APIEmbed {
 	return {
 		title: 'Here are the photos',
-		description: `Showing ${pageSize}/${pageCount} of ${photoCount} group photos`,
+		description: `Showingpage ${page}/${pageCount} out of ${photoCount} group photos`,
 		fields: [
-			{
-				name: 'Date',
-				value: photos.objects
-					.slice((page - 1) * pageSize, pageSize * page)
-					.map((photo) => `[${photo.customMetadata?.date}](https://photos.fry.api.lisekilis.dev/${photo.key})`)
-					.join('\n'),
-				inline: true,
-			},
 			{
 				name: 'Id',
 				value: photos.objects
 					.slice((page - 1) * pageSize, pageSize * page)
-					.map((photo) => photo.key)
+					.map((photo) => `[${photo.key}](https://photos.fry.api.lisekilis.dev/${photo.key})`)
+					.join('\n'),
+				inline: true,
+			},
+			{
+				name: 'Date',
+				value: photos.objects
+					.slice((page - 1) * pageSize, pageSize * page)
+					.map((photo) => photo.customMetadata?.date)
 					.join('\n'),
 				inline: true,
 			},
@@ -102,7 +102,7 @@ export function listPhotosEmbed(photos: PhotoR2Objects, page: number, pageSize: 
 			},
 		],
 		footer: {
-			text: 'Click on the date to view the photo',
+			text: 'Click on the id to view the photo',
 		},
 		color: 0x9469c9,
 	};
