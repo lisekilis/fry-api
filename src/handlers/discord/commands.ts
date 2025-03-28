@@ -12,7 +12,7 @@ import {
 	MessageFlags,
 } from 'discord-api-types/v10';
 import { messageResponse, embedResponse } from './responses';
-import { PhotoR2Object, PillowR2Objects, PillowType } from '../../types';
+import { PhotoR2Object, PhotoR2Objects, PillowR2Objects, PillowType } from '../../types';
 import { patchSettings } from '../settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
 import { paginationButtons, listPillowsEmbed } from './util';
@@ -462,8 +462,19 @@ export async function handleViewCommand(interaction: APIChatInputApplicationComm
 
 		case 'photo':
 			const photoId = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
-			if (!photoId) return messageResponse('Please provide a valid ID', MessageFlags.Ephemeral);
-			const photo = (await env.FRY_PHOTOS.get(photoId)) as PhotoR2Object;
+
+			let photoIdToFetch = photoId;
+			if (!photoIdToFetch) {
+				const list = await env.FRY_PHOTOS.list();
+				if (list.objects && list.objects.length > 0) {
+					const randomIndex = Math.floor(Math.random() * list.objects.length);
+					photoIdToFetch = list.objects[randomIndex].key;
+				}
+			}
+
+			if (!photoIdToFetch) return messageResponse('Photo not found', MessageFlags.Ephemeral);
+
+			const photo = await env.FRY_PHOTOS.get(photoIdToFetch);
 			if (!photo) return messageResponse('Photo not found', MessageFlags.Ephemeral);
 
 			const photoEmbed = {
