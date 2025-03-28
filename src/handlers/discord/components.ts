@@ -1,6 +1,7 @@
 import {
 	APIEmbed,
 	APIMessage,
+	APIMessageComponentButtonInteraction,
 	APIMessageComponentInteraction,
 	ImageFormat,
 	InteractionResponseType,
@@ -11,8 +12,9 @@ import {
 	RouteBases,
 	Routes,
 } from 'discord-api-types/v10';
-import { messageResponse, updateResponse } from './responses';
+import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
+import { listPhotosEmbed, listPillowsEmbed, paginationButtons } from './util';
 
 export async function handleMessageComponent(
 	interaction: APIMessageComponentInteraction,
@@ -22,6 +24,8 @@ export async function handleMessageComponent(
 	if (!isMessageComponentButtonInteraction(interaction)) {
 		return messageResponse('Only buttons are supported', MessageFlags.Ephemeral);
 	}
+
+	if (interaction.data.custom_id.startsWith('page')) return handlePaginationButtons(interaction, env, ctx);
 
 	if (!isGuildInteraction(interaction)) {
 		return messageResponse('This interaction is not in a guild', MessageFlags.Ephemeral);
@@ -224,8 +228,58 @@ export async function handleMessageComponent(
 					MessageFlags.Ephemeral
 				);
 			}
-
 		default:
 			return messageResponse('Unknown button interaction', MessageFlags.Ephemeral);
 	}
+}
+
+async function handlePaginationButtons(interaction: APIMessageComponentButtonInteraction, env: Env, ctx: ExecutionContext) {
+	const user = interaction.message.interaction_metadata?.user;
+	if (!user) return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
+
+	const embed = interaction.message.embeds[0];
+	const type = embed.description?.split(' ').at(-1);
+	const splitId = interaction.data.custom_id.split('-');
+	const page = {
+		next: Number(splitId[3]) + splitId[1] === 'next' ? 1 : -1,
+		size: Number(splitId[2]),
+		current: Number(splitId[3]),
+		count: Number(splitId[4]),
+	};
+
+	if (page.next < 1 || page.next > page.count) return messageResponse('Invalid page number', MessageFlags.Ephemeral);
+
+	const images =
+		type === 'pillows'
+			? await env.FRY_PILLOWS.list({ include: ['customMetadata'] })
+			: await env.FRY_PHOTOS.list({ include: ['customMetadata'] });
+
+	const newEmbed =
+		type === 'pillows'
+			? listPillowsEmbed(images, page.next, page.size, page.count, images.objects.length)
+			: listPhotosEmbed(images, page.next, page.size, page.count, images.objects.length);
+
+	const newComponents = paginationButtons(page.size, page.next, page.count);
+
+	const paginationResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			type: InteractionResponseType.UpdateMessage,
+			data: {
+				content: interaction.message.content,
+				embeds: [newEmbed],
+				components: newComponents,
+			},
+		} as RESTPostAPIInteractionCallbackJSONBody),
+	});
+
+	if (!paginationResponse.ok) {
+		console.error(`Error updating message: ${await paginationResponse.text()}`);
+		return messageResponse('An error occurred while updating the message', MessageFlags.Ephemeral);
+	}
+
+	return new Response(undefined, { status: 202 });
 }

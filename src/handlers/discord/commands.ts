@@ -15,7 +15,7 @@ import { messageResponse, embedResponse } from './responses';
 import { PillowType } from '../../types';
 import { patchSettings } from '../settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
-import { controlButtons } from './util';
+import { paginationButtons, listPillowsEmbed } from './util';
 
 export function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	const startTime = getTimestamp(`${BigInt(interaction.id)}`);
@@ -168,38 +168,8 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 			if (!pillows.objects) return messageResponse('No pillows found', MessageFlags.Ephemeral);
 			const pillowCount = pillows.objects.length;
 			const pageCount = Math.ceil(pillowCount / pageSize);
-			const components = controlButtons(pageSize, 1, pageCount);
-			const embed: APIEmbed = {
-				title: 'Here are the pillows',
-				description: `Showing ${pageSize}/${pageCount} of ${pillowCount} submissions`,
-				fields: [
-					{
-						name: 'Name',
-						value: pillows.objects
-							.slice(0, pageSize)
-							.map((pillow) => `[${pillow.customMetadata?.name}](https://pillows.fry.api.lisekilis.dev/${pillow.key})`)
-							.join('\n'),
-						inline: true,
-					},
-					{
-						name: 'Type',
-						value: pillows.objects
-							.slice(0, pageSize)
-							.map((pillow) => pillow.customMetadata?.type)
-							.join('\n'),
-						inline: true,
-					},
-					{
-						name: 'Creator',
-						value: pillows.objects
-							.slice(0, pageSize)
-							.map((pillow) => `<@${pillow.customMetadata?.userId}>`)
-							.join('\n'),
-						inline: true,
-					},
-				],
-				color: 0x9469c9,
-			};
+			const components = paginationButtons(pageSize, 1, pageCount);
+			const embed = listPillowsEmbed(pillows, 1, pageSize, pageCount, pillowCount);
 			return embedResponse(embed, `Found ${pillowCount} pillows`, undefined, components);
 
 		case 'photos':
