@@ -156,7 +156,7 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 
 	const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 	const parsedSettings = settings ? JSON.parse(settings) : {};
-	const pageSize = interaction.data.options[0].options?.find((option) => option.name === 'count')?.value as number | 10;
+	const pageSize = (interaction.data.options[0].options?.find((option) => option.name === 'count')?.value as number) ?? 10;
 	switch (interaction.data.options[0].name) {
 		case 'pillows':
 			if (!parsedSettings.pillowChannelId)
