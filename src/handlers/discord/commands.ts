@@ -1,8 +1,11 @@
 import {
+	APIActionRowComponent,
 	APIApplicationCommandInteractionDataBasicOption,
+	APIButtonComponent,
 	APIChatInputApplicationCommandGuildInteraction,
 	APIEmbed,
 	APIEmbedField,
+	APIMessageActionRowComponent,
 	ApplicationCommandOptionType,
 	ButtonStyle,
 	ComponentType,
@@ -12,6 +15,7 @@ import { messageResponse, embedResponse } from './responses';
 import { PillowType } from '../../types';
 import { patchSettings } from '../settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
+import { controlButtons } from './util';
 
 export function handlePingCommand(interaction: APIChatInputApplicationCommandGuildInteraction): Response {
 	const startTime = getTimestamp(`${BigInt(interaction.id)}`);
@@ -162,36 +166,40 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 				);
 			const pillows = await env.FRY_PILLOWS.list();
 			if (!pillows.objects) return messageResponse('No pillows found', MessageFlags.Ephemeral);
-			const pillowList = pillows.objects.map((pillow) => {
-				const metadata = pillow.customMetadata!;
-				return `**${metadata.name}** - ${metadata.type} by <@${metadata.userId}>`;
-			});
-			const pages = Math.ceil(pillowList.length / pageSize);
-			const components =
-				pages > 1
-					? [
-							{
-								type: ComponentType.ActionRow,
-								components: [
-									{
-										type: ComponentType.Button,
-										style: ButtonStyle.Primary,
-										label: 'Previous',
-										custom_id: 'previous',
-										disabled: true,
-									},
-									{
-										type: ComponentType.Button,
-										style: ButtonStyle.Primary,
-										label: 'Next',
-										custom_id: 'next',
-									},
-								],
-							},
-					  ]
-					: undefined;
-
-			return messageResponse(pillowList.join('\n'), MessageFlags.Ephemeral);
+			const pillowCount = pillows.objects.length;
+			const pageCount = Math.ceil(pillowCount / pageSize);
+			const components = controlButtons(pageSize, 1, pageCount);
+			const embed: APIEmbed = {
+				title: 'Pillow Submissions',
+				fields: [
+					{
+						name: 'Name',
+						value: `[${pillows.objects
+							.slice(0, pageSize)
+							.map((pillow) => pillow.customMetadata!.name)
+							.join('\n')}](https://pillows.fry.api.lisekilis.dev/${pillows.objects.slice(0, pageSize).map((pillow) => pillow.key)})`,
+						inline: true,
+					},
+					{
+						name: 'Type',
+						value: pillows.objects
+							.slice(0, pageSize)
+							.map((pillow) => pillow.customMetadata!.type)
+							.join('\n'),
+						inline: true,
+					},
+					{
+						name: 'Creator',
+						value: `<@${pillows.objects
+							.slice(0, pageSize)
+							.map((pillow) => pillow.customMetadata!.userId)
+							.join('\n')}>`,
+						inline: true,
+					},
+				],
+				color: 0x9469c9,
+			};
+			return embedResponse(embed, `Found ${pillowCount} pillows`, undefined, components);
 
 		case 'photos':
 			if (!parsedSettings.photoChannelId)
