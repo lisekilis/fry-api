@@ -176,7 +176,7 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 						name: 'Name',
 						value: pillows.objects
 							.slice(0, pageSize)
-							.map((pillow) => pillow.customMetadata?.name)
+							.map((pillow) => `[${pillow.customMetadata?.name}](https://pillows.fry.api.lisekilis.dev/${pillow.key})`)
 							.join('\n'),
 						inline: true,
 					},
