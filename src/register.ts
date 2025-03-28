@@ -266,6 +266,57 @@ const commands: Command[] = [
 			},
 		],
 	},
+	{
+		name: 'view',
+		type: ApplicationCommandType.ChatInput,
+		description: 'View an image',
+		options: [
+			{
+				name: 'pillow',
+				type: ApplicationCommandOptionType.Subcommand,
+				description: 'View a pillow',
+				options: [
+					{
+						name: 'user',
+						type: ApplicationCommandOptionType.User,
+						description: 'User to view pillows for',
+					},
+					{
+						name: 'type',
+						type: ApplicationCommandOptionType.String,
+						description: 'Type of pillows to view',
+						choices: [
+							{
+								name: 'Standard',
+								value: PillowType.NORMAL,
+							},
+							{
+								name: 'Dakimakura',
+								value: PillowType.BODY,
+							},
+						],
+					},
+					{
+						name: 'id',
+						type: ApplicationCommandOptionType.String,
+						description: 'ID of the pillow to view',
+					},
+				],
+			},
+			{
+				name: 'photo',
+				type: ApplicationCommandOptionType.Subcommand,
+				description: 'View a Fry-Day group photo',
+				options: [
+					{
+						name: 'id',
+						type: ApplicationCommandOptionType.String,
+						description: 'ID of the photo to view',
+					},
+				],
+			},
+		],
+	},
 ];
 
 async function deleteAllCommands() {
