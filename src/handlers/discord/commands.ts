@@ -164,7 +164,7 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 					'The pillow submissions channel has not been configured. Please ask an admin to set it up.',
 					MessageFlags.Ephemeral
 				);
-			const pillows = await env.FRY_PILLOWS.list();
+			const pillows = await env.FRY_PILLOWS.list({ include: ['customMetadata'] });
 			if (!pillows.objects) return messageResponse('No pillows found', MessageFlags.Ephemeral);
 			const pillowCount = pillows.objects.length;
 			const pageCount = Math.ceil(pillowCount / pageSize);
@@ -190,10 +190,10 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 					},
 					{
 						name: 'Creator',
-						value: `<@${pillows.objects
+						value: pillows.objects
 							.slice(0, pageSize)
-							.map((pillow) => pillow.customMetadata?.userId)
-							.join('\n')}>`,
+							.map((pillow) => `<@${pillow.customMetadata?.userId}>`)
+							.join('\n'),
 						inline: true,
 					},
 				],
