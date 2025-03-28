@@ -170,7 +170,8 @@ export async function handleListImages(interaction: APIChatInputApplicationComma
 			const pageCount = Math.ceil(pillowCount / pageSize);
 			const components = controlButtons(pageSize, 1, pageCount);
 			const embed: APIEmbed = {
-				title: 'Pillow Submissions',
+				title: 'Here are the pillows',
+				description: `Showing ${pageSize}/${pageCount} of ${pillowCount} submissions`,
 				fields: [
 					{
 						name: 'Name',
