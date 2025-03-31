@@ -12,7 +12,11 @@ import {
 } from './commands';
 import { messageResponse } from './responses';
 
-export async function handleApplicationCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+export async function handleApplicationCommand(
+	interaction: APIChatInputApplicationCommandGuildInteraction,
+	env: Env,
+	ctx: ExecutionContext
+): Promise<Response> {
 	try {
 		console.log(`Processing command: ${interaction.data.name}`);
 
@@ -21,7 +25,7 @@ export async function handleApplicationCommand(interaction: APIChatInputApplicat
 				return handlePingCommand(interaction);
 
 			case 'config':
-				return await handleConfigCommand(interaction, env);
+				return await handleConfigCommand(interaction, env, ctx);
 
 			case 'submit':
 				return await handleSubmitCommand(interaction, env);

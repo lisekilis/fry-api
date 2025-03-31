@@ -4,12 +4,14 @@ import {
 	APIMessageComponentInteraction,
 	APIChatInputApplicationCommandGuildInteraction,
 	InteractionResponseType,
+	MessageFlags,
 } from 'discord-api-types/v10';
 import { messageResponse } from './discord/responses';
 import { handleApplicationCommand } from './discord/index';
 import { handleMessageComponent } from './discord/components';
 import { verifyKey } from 'discord-interactions';
 import { isGuildInteraction } from 'discord-api-types/utils';
+import { verifyWhitelist } from './discord/util';
 
 // Discord webhook handler
 export async function handleDiscordInteractions(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -32,6 +34,11 @@ export async function handleDiscordInteractions(request: Request, env: Env, ctx:
 	// Parse the interaction
 	const interaction: APIInteraction = JSON.parse(rawBody);
 
+	// verify whitelist
+	if (!verifyWhitelist(interaction, env)) {
+		return messageResponse('Guild not whitelisted', MessageFlags.Ephemeral);
+	}
+
 	// Handle different interaction types
 	switch (interaction.type) {
 		case InteractionType.Ping:
@@ -44,7 +51,7 @@ export async function handleDiscordInteractions(request: Request, env: Env, ctx:
 
 		case InteractionType.ApplicationCommand:
 			if (isGuildInteraction(interaction)) {
-				return await handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env);
+				return await handleApplicationCommand(interaction as APIChatInputApplicationCommandGuildInteraction, env, ctx);
 			}
 			return messageResponse('Invalid interaction type or missing guild_id');
 

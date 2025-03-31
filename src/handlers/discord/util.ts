@@ -1,5 +1,14 @@
-import { APIActionRowComponent, APIEmbed, APIMessageActionRowComponent, ButtonStyle, ComponentType } from 'discord-api-types/v10';
+import {
+	APIActionRowComponent,
+	APIEmbed,
+	APIGuildIntegration,
+	APIInteraction,
+	APIMessageActionRowComponent,
+	ButtonStyle,
+	ComponentType,
+} from 'discord-api-types/v10';
 import { PhotoR2Objects, PillowR2Objects } from '../../types';
+import { isGuildInteraction } from 'discord-api-types/utils';
 
 export function paginationButtons(
 	pageSize: number,
@@ -106,4 +115,16 @@ export function listPhotosEmbed(photos: PhotoR2Objects, page: number, pageSize: 
 		},
 		color: 0x9469c9,
 	};
+}
+export async function verifyWhitelist(interaction: APIInteraction, env: Env): Promise<boolean> {
+	if (isGuildInteraction(interaction)) {
+		if (interaction.member.user.id === env.FRY_OWNER_ID) return true;
+		const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+		if (!settings) return false;
+		const parsedSettings = JSON.parse(settings);
+		if (!parsedSettings || !parsedSettings.name) return false;
+		return true;
+	}
+	if (interaction.user?.id === env.FRY_OWNER_ID) return true;
+	return false;
 }

@@ -10,6 +10,7 @@ interface Env {
 	DISCORD_PUBLIC_KEY: string;
 	DISCORD_BOT_TOKEN: string;
 	API_TOKEN: string;
+	FRY_OWNER_ID: string;
 }
 
 // Begin runtime types

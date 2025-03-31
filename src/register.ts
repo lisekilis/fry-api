@@ -60,6 +60,38 @@ const commands: Command[] = [
 					},
 				],
 			},
+			{
+				name: 'global',
+				type: ApplicationCommandOptionType.SubcommandGroup,
+				description: 'Set a global setting',
+				options: [
+					{
+						name: 'whitelist',
+						type: ApplicationCommandOptionType.Subcommand,
+						description: 'Set the whitelist for the bot',
+						options: [
+							{
+								name: 'guild',
+								type: ApplicationCommandOptionType.String,
+								description: 'Guild to whitelist',
+								required: true,
+							},
+							{
+								name: 'name',
+								type: ApplicationCommandOptionType.String,
+								description: 'Name of the guild',
+								required: true,
+							},
+							{
+								name: 'toggle',
+								type: ApplicationCommandOptionType.Boolean,
+								description: 'Add or remove the guild from the whitelist',
+								required: false,
+							},
+						],
+					},
+				],
+			},
 		],
 	},
 	{

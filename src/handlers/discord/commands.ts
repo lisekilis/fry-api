@@ -25,7 +25,11 @@ export function handlePingCommand(interaction: APIChatInputApplicationCommandGui
 	return messageResponse(`🏓Pong! (${ping}ms)`);
 }
 
-export async function handleConfigCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
+export async function handleConfigCommand(
+	interaction: APIChatInputApplicationCommandGuildInteraction,
+	env: Env,
+	ctx: ExecutionContext
+): Promise<Response> {
 	// Validate the interaction has proper options structure
 	if (
 		!interaction.data.options?.[0] ||
@@ -110,9 +114,53 @@ export async function handleConfigCommand(interaction: APIChatInputApplicationCo
 						await patchSettings(interaction.guild_id, { photoChannelId: photoChannelOption.value }, env);
 						console.log(`Setting photo channel: ${photoChannelOption.value} for guild: ${interaction.guild_id}`);
 						return messageResponse('Photo channel set successfully', MessageFlags.Ephemeral);
+				}
+			case 'global':
+				if (interaction.member.user.id !== env.FRY_OWNER_ID)
+					return messageResponse(`Only <@${env.FRY_OWNER_ID}> can change the global settings`, MessageFlags.Ephemeral);
+				if (
+					!interaction.data.options[0].options?.[0] ||
+					interaction.data.options[0].options[0].type !== ApplicationCommandOptionType.Subcommand
+				) {
+					return messageResponse('Please provide a valid channel subcommand', MessageFlags.Ephemeral);
+				}
+				switch (interaction.data.options[0].options[0].name) {
+					case 'whitelist':
+						if (!interaction.data.options[0].options) {
+							const settings = await env.FRY_SETTINGS.get('whitelist');
+							const parsedSettings = settings ? JSON.parse(settings) : {};
+							// Show current whitelist (if any)
+							if (parsedSettings[interaction.guild_id]) {
+								return messageResponse(
+									`Current whitelist: \`\`\`ts\n${parsedSettings[interaction.guild_id]}\`\`\``,
+									MessageFlags.Ephemeral
+								);
+							}
+							return messageResponse('No whitelist set', MessageFlags.Ephemeral);
+						}
 
-					default:
-						return messageResponse('Unknown channel subcommand', MessageFlags.Ephemeral);
+						const whitelistOptions = {
+							guild: interaction.data.options[0].options[0].options?.find((option) => option.name === 'guild')?.value,
+							name: interaction.data.options[0].options[0].options?.find((option) => option.name === 'name')?.value,
+							toggle: interaction.data.options[0].options[0].options?.find((option) => option.name === 'toggle')?.value ?? true,
+						};
+
+						if (
+							!whitelistOptions.guild ||
+							!whitelistOptions.name ||
+							typeof whitelistOptions.guild !== 'string' ||
+							typeof whitelistOptions.name !== 'string'
+						) {
+							return messageResponse('Invalid options provided', MessageFlags.Ephemeral);
+						}
+						if (!whitelistOptions.toggle) {
+							console.log(`Removing whitelist for guild: ${interaction.guild_id}`);
+							await env.FRY_SETTINGS.delete(interaction.guild_id);
+							return messageResponse('Whitelist removed successfully', MessageFlags.Ephemeral);
+						}
+						console.log(`Setting whitelist: ${whitelistOptions.guild} for guild: ${interaction.guild_id}`);
+						ctx.waitUntil(patchSettings(whitelistOptions.guild, whitelistOptions.name, env));
+						return messageResponse('Whitelist set successfully', MessageFlags.Ephemeral);
 				}
 
 			default:
