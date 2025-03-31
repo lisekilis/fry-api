@@ -159,7 +159,7 @@ export async function handleConfigCommand(
 							return messageResponse('Whitelist removed successfully', MessageFlags.Ephemeral);
 						}
 						console.log(`Setting whitelist: ${whitelistOptions.guild} for guild: ${interaction.guild_id}`);
-						ctx.waitUntil(patchSettings(whitelistOptions.guild, whitelistOptions.name, env));
+						ctx.waitUntil(patchSettings(whitelistOptions.guild, { name: whitelistOptions.name }, env));
 						return messageResponse('Whitelist set successfully', MessageFlags.Ephemeral);
 				}
 
