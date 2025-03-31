@@ -126,7 +126,13 @@ export async function handleConfigCommand(
 				}
 				switch (interaction.data.options[0].options[0].name) {
 					case 'whitelist':
-						if (!interaction.data.options[0].options) {
+						const whitelistOptions = {
+							guild: interaction.data.options[0].options[0].options?.find((option) => option.name === 'guild')?.value,
+							name: interaction.data.options[0].options[0].options?.find((option) => option.name === 'name')?.value,
+							toggle: interaction.data.options[0].options[0].options?.find((option) => option.name === 'toggle')?.value ?? true,
+						};
+
+						if (!whitelistOptions.guild && !whitelistOptions.name) {
 							const settings = await env.FRY_SETTINGS.get('whitelist');
 							const parsedSettings = settings ? JSON.parse(settings) : {};
 							// Show current whitelist (if any)
@@ -138,12 +144,6 @@ export async function handleConfigCommand(
 							}
 							return messageResponse('No whitelist set', MessageFlags.Ephemeral);
 						}
-
-						const whitelistOptions = {
-							guild: interaction.data.options[0].options[0].options?.find((option) => option.name === 'guild')?.value,
-							name: interaction.data.options[0].options[0].options?.find((option) => option.name === 'name')?.value,
-							toggle: interaction.data.options[0].options[0].options?.find((option) => option.name === 'toggle')?.value ?? true,
-						};
 
 						if (
 							!whitelistOptions.guild ||
