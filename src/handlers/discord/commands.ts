@@ -133,14 +133,10 @@ export async function handleConfigCommand(
 						};
 
 						if (!whitelistOptions.guild && !whitelistOptions.name) {
-							const settings = await env.FRY_SETTINGS.get('whitelist');
-							const parsedSettings = settings ? JSON.parse(settings) : {};
+							const settings = await env.FRY_SETTINGS.list();
 							// Show current whitelist (if any)
-							if (parsedSettings[interaction.guild_id]) {
-								return messageResponse(
-									`Current whitelist: \`\`\`ts\n${parsedSettings[interaction.guild_id]}\`\`\``,
-									MessageFlags.Ephemeral
-								);
+							if (settings.keys.length > 0) {
+								return messageResponse(`Current whitelist: \`\`\`ts\n${settings}\`\`\``, MessageFlags.Ephemeral);
 							}
 							return messageResponse('No whitelist set', MessageFlags.Ephemeral);
 						}
