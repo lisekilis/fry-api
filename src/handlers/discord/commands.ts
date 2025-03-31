@@ -145,19 +145,16 @@ export async function handleConfigCommand(
 							return messageResponse('No whitelist set', MessageFlags.Ephemeral);
 						}
 
-						if (
-							!whitelistOptions.guild ||
-							!whitelistOptions.name ||
-							typeof whitelistOptions.guild !== 'string' ||
-							typeof whitelistOptions.name !== 'string'
-						) {
+						if (!whitelistOptions.guild || typeof whitelistOptions.guild !== 'string')
 							return messageResponse('Invalid options provided', MessageFlags.Ephemeral);
-						}
+
 						if (!whitelistOptions.toggle) {
 							console.log(`Removing whitelist for guild: ${interaction.guild_id}`);
 							await env.FRY_SETTINGS.delete(interaction.guild_id);
 							return messageResponse('Whitelist removed successfully', MessageFlags.Ephemeral);
 						}
+						if (!whitelistOptions.name || typeof whitelistOptions.name !== 'string')
+							return messageResponse('Invalid name provided', MessageFlags.Ephemeral);
 						console.log(`Setting whitelist: ${whitelistOptions.guild} for guild: ${interaction.guild_id}`);
 						ctx.waitUntil(patchSettings(whitelistOptions.guild, { name: whitelistOptions.name }, env));
 						return messageResponse('Whitelist set successfully', MessageFlags.Ephemeral);
