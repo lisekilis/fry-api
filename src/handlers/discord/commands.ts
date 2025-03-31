@@ -136,7 +136,7 @@ export async function handleConfigCommand(
 							const settings = await env.FRY_SETTINGS.list();
 							// Show current whitelist (if any)
 							if (settings.keys.length > 0) {
-								return messageResponse(`Current whitelist: \`\`\`ts\n${settings}\`\`\``, MessageFlags.Ephemeral);
+								return messageResponse(`Current whitelist: \`\`\`ts\n${JSON.stringify(settings)}\`\`\``, MessageFlags.Ephemeral);
 							}
 							return messageResponse('No whitelist set', MessageFlags.Ephemeral);
 						}
