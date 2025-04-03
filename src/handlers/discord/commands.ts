@@ -405,7 +405,7 @@ export async function handleUploadCommand(interaction: APIChatInputApplicationCo
 					submittedAt: new Date(getTimestamp(`${BigInt(interaction.id)}`)).toISOString(),
 					// set date to last friday
 					date:
-						date ??
+						new Date(date).toISOString() ||
 						(() => {
 							// Get the current date
 							const today = new Date();
@@ -427,12 +427,7 @@ export async function handleUploadCommand(interaction: APIChatInputApplicationCo
 							// Create date for last Friday
 							const lastFriday = new Date();
 							lastFriday.setDate(today.getDate() - daysToSubtract);
-
-							// Format as dd/mm/yyyy
-							const dd = String(lastFriday.getDate()).padStart(2, '0');
-							const mm = String(lastFriday.getMonth() + 1).padStart(2, '0'); // January is 0!
-							const yyyy = lastFriday.getFullYear();
-							return `${dd}/${mm}/${yyyy}`;
+							return lastFriday.toISOString();
 						})(),
 					userName: interaction.member.user.username,
 				},

@@ -162,7 +162,7 @@ const commands: Command[] = [
 					{
 						name: 'date',
 						type: ApplicationCommandOptionType.String,
-						description: 'Date of the photo (defaults to last friday)',
+						description: 'Date of the photo (any string accepted by the Date() constructor, defaults to last friday)',
 						required: false,
 					},
 				],
