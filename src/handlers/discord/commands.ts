@@ -208,7 +208,7 @@ export async function handleListCommand(interaction: APIChatInputApplicationComm
 			const pageCount = Math.ceil(pillowCount / pageSize);
 			const components = paginationButtons(pageSize, 1, pageCount);
 			const embed = listPillowsEmbed(pillows as PillowR2Objects, 1, pageSize, pageCount, pillowCount);
-			return embedResponse(embed, `Found ${pillowCount} pillows`, undefined, components);
+			return embedResponse(embed, `Found ${pillowCount} pillows`, MessageFlags.Ephemeral, components);
 
 		case 'photos':
 			if (!parsedSettings.photoChannelId)
@@ -219,7 +219,7 @@ export async function handleListCommand(interaction: APIChatInputApplicationComm
 			const photoPageCount = Math.ceil(photoCount / pageSize);
 			const photoComponents = paginationButtons(pageSize, 1, photoPageCount);
 			const photoEmbed = listPhotosEmbed(photos as PhotoR2Objects, 1, pageSize, photoPageCount, photoCount);
-			return embedResponse(photoEmbed, `Found ${photoCount} photos`, undefined, photoComponents);
+			return embedResponse(photoEmbed, `Found ${photoCount} photos`, MessageFlags.Ephemeral, photoComponents);
 
 		default:
 			return messageResponse('Unknown subcommand', MessageFlags.Ephemeral);
@@ -384,13 +384,20 @@ export async function handleUploadCommand(interaction: APIChatInputApplicationCo
 		case 'photo':
 			const attachmentId = interaction.data.options[0].options?.find((option) => option.name === 'image')?.value as string;
 			const date = interaction.data.options[0].options?.find((option) => option.name === 'date')?.value as string;
-			if (!attachmentId) return messageResponse('Please provide a valid ID and attachment', MessageFlags.Ephemeral);
+			if (!attachmentId) return messageResponse('Please provide a valid attachment', MessageFlags.Ephemeral);
 			// Get the attachment
 			const attachment = interaction.data.resolved?.attachments?.[attachmentId];
 			if (!attachment) return messageResponse('Attachment not found', MessageFlags.Ephemeral);
 
 			// Validate attachment is png
 			if (!attachment.content_type?.includes('png')) return messageResponse('Attachment must be a PNG image', MessageFlags.Ephemeral);
+
+			// Validate date
+			if (date && isNaN(new Date(date).getTime()))
+				return messageResponse(
+					'Invalid date format. Please use a [valid format](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/Date) like [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).',
+					MessageFlags.Ephemeral
+				);
 
 			// Download the attachment
 			const response = await fetch(attachment.url);
@@ -404,31 +411,32 @@ export async function handleUploadCommand(interaction: APIChatInputApplicationCo
 					userId: interaction.member.user.id,
 					submittedAt: new Date(getTimestamp(`${BigInt(interaction.id)}`)).toISOString(),
 					// set date to last friday
-					date:
-						new Date(date).toISOString() ||
-						(() => {
-							// Get the current date
-							const today = new Date();
-							const dayOfWeek = today.getDay(); // 0-6 (Sun-Sat)
+					date: date
+						? new Date(date).toISOString()
+						: (() => {
+								// Get the current date
+								const today = new Date();
 
-							// Calculate days to subtract to get to last Friday
-							let daysToSubtract;
-							if (dayOfWeek === 6) {
-								// Saturday
-								daysToSubtract = 1; // Go back 1 day to Friday
-							} else if (dayOfWeek === 5) {
-								// Today is Friday
-								daysToSubtract = 7; // Go back a week to last Friday
-							} else {
-								// Sunday-Thursday
-								daysToSubtract = dayOfWeek + 2; // Sunday(0)+2=2, Monday(1)+2=3, etc.
-							}
+								// Calculate days to subtract to get to last Friday
+								let daysToSubtract;
+								switch (today.getUTCDay()) {
+									case 5:
+										daysToSubtract = 0; // Friday
+										break;
+									case 6:
+										daysToSubtract = 1; // Saturday
+										break;
+									default:
+										daysToSubtract = today.getUTCDay() + 2; // Sunday(0)+2=2, Monday(1)+2=3, etc.
+										break;
+								}
 
-							// Create date for last Friday
-							const lastFriday = new Date();
-							lastFriday.setDate(today.getDate() - daysToSubtract);
-							return lastFriday.toISOString();
-						})(),
+								// Create date for last Friday
+								const lastFriday = new Date();
+								lastFriday.setUTCDate(today.getUTCDate() - daysToSubtract);
+								lastFriday.setUTCHours(20, 0, 0, 0); // Set time to midnight
+								return lastFriday.toISOString();
+						  })(),
 					userName: interaction.member.user.username,
 				},
 			});
