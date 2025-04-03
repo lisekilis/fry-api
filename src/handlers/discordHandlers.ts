@@ -1,7 +1,6 @@
 import {
 	APIInteraction,
 	InteractionType,
-	APIMessageComponentInteraction,
 	APIChatInputApplicationCommandGuildInteraction,
 	InteractionResponseType,
 	MessageFlags,

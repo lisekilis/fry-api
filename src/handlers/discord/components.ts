@@ -1,12 +1,9 @@
 import {
 	APIEmbed,
-	APIMessage,
 	APIMessageComponentButtonInteraction,
 	APIMessageComponentInteraction,
-	ImageFormat,
 	InteractionResponseType,
 	MessageFlags,
-	MessageType,
 	RESTPostAPIInteractionCallbackJSONBody,
 	RESTPostAPIInteractionFollowupJSONBody,
 	RouteBases,

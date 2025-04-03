@@ -23,61 +23,12 @@ export async function handleGetImage(env: Env, imageId: string): Promise<Respons
 		headers: { 'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream' },
 	});
 }
-
-export async function handleGetImageData(env: Env, imageId: string): Promise<Response> {
-	const object = await env.FRY_PHOTOS.get(imageId);
+export async function handleHeadImage(env: Env, photoId: string): Promise<Response> {
+	const object = await env.FRY_PHOTOS.head(photoId);
 	if (!object) {
 		return new Response('Not found', { status: 404 });
 	}
-	return new Response(JSON.stringify(object.customMetadata), {
+	return new Response(JSON.stringify(object), {
 		headers: { 'Content-Type': 'application/json' },
 	});
-}
-
-export async function handleUploadImage(request: Request, env: Env): Promise<Response> {
-	try {
-		const formData = await request.formData();
-		const file = formData.get('file');
-		const discordUserId = formData.get('discordUserId') as string;
-		const submittedAt = (formData.get('submittedAt') as string) || new Date().toISOString();
-		const date = formData.get('date') as string;
-		const userName = formData.get('userName') as string;
-
-		if (!file || !(file instanceof File)) {
-			return new Response('File missing or invalid', { status: 400 });
-		}
-		if (!discordUserId || !userName) {
-			return new Response('Missing discordUserId or userName', { status: 400 });
-		}
-		const key = crypto.randomUUID();
-
-		await env.FRY_PHOTOS.put(key, file.stream(), {
-			httpMetadata: {
-				contentType: file.type,
-			},
-			customMetadata: {
-				discordUserId,
-				submittedAt,
-				date,
-				userName,
-			},
-		});
-
-		return new Response(JSON.stringify({ success: true, key }), {
-			headers: { 'Content-Type': 'application/json' },
-		});
-	} catch (err) {
-		return new Response('Upload failed', { status: 500 });
-	}
-}
-
-export async function handleDeleteImage(env: Env, imageId: string): Promise<Response> {
-	try {
-		await env.FRY_PHOTOS.delete(imageId);
-		return new Response(JSON.stringify({ success: true, key: imageId }), {
-			headers: { 'Content-Type': 'application/json' },
-		});
-	} catch (err) {
-		return new Response('Delete failed', { status: 500 });
-	}
 }

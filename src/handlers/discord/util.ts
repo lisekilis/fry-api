@@ -1,7 +1,6 @@
 import {
 	APIActionRowComponent,
 	APIEmbed,
-	APIGuildIntegration,
 	APIInteraction,
 	APIMessageActionRowComponent,
 	ButtonStyle,

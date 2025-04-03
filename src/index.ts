@@ -1,30 +1,11 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
-// Barrel file to re-export all handlers
-
 import {
 	handleListPillows,
 	handleGetPillow,
-	handleDeletePillow,
-	handleUploadPillow,
-	handleDeleteImage,
 	handleGetImage,
 	handleListImages,
-	handleUploadImage,
-	handleGetPillowData,
-	handleGetImageData,
 	handleDiscordInteractions,
+	handleHeadImage,
+	handleHeadPillow,
 } from './handlers/index';
 
 async function validateToken(request: Request, env: Env): Promise<boolean> {
@@ -49,49 +30,31 @@ export default {
 			return new Response('Unauthorized', { status: 401 });
 		}
 		switch (pathParts[0]) {
-			case 'pillow':
+			case 'pillows':
 				switch (true) {
 					case method === 'GET' && pathParts[1] === 'list':
 						return await handleListPillows(env);
 
-					case method === 'GET' && pathParts[1] === 'data':
-						return await handleGetPillowData(env, pathParts[2]);
+					case method === 'GET' && /\d{18}_\w+/.test(pathParts[1]):
+						return await handleGetPillow(env, pathParts[1]);
 
-					case method === 'GET' && pathParts[1] === 'texture':
-						return await handleGetPillow(env, pathParts[2]);
-
-					case method === 'POST' && pathParts[1] === 'upload':
-						return await handleUploadPillow(request, env);
-
-					case method === 'DELETE' && pathParts[1] === 'delete':
-						return await handleDeletePillow(env, pathParts[2]);
-
-					default:
-						return new Response('Not found', { status: 404 });
+					case method === 'HEAD' && /\d{18}_\w+/.test(pathParts[1]):
+						return await handleHeadPillow(env, pathParts[1]);
 				}
+				break;
 			case 'photos':
 				switch (true) {
 					case method === 'GET' && pathParts[1] === 'list':
 						return await handleListImages(env);
 
-					case method === 'GET' && pathParts[1] === 'image':
-						return await handleGetImage(env, pathParts[2]);
+					case method === 'GET' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pathParts[1]):
+						return await handleGetImage(env, pathParts[1]);
 
-					case method === 'GET' && pathParts[1] === 'data':
-						return await handleGetImageData(env, pathParts[2]);
-
-					case method === 'POST' && pathParts[1] === 'upload':
-						return await handleUploadImage(request, env);
-
-					case method === 'DELETE' && pathParts[1] === 'delete':
-						return await handleDeleteImage(env, pathParts[2]);
-
-					default:
-						return new Response('Not found', { status: 404 });
+					case method === 'HEAD' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pathParts[1]):
+						return await handleHeadImage(env, pathParts[1]);
 				}
-
-			default:
-				return new Response('Not found', { status: 404 });
+				break;
 		}
+		return new Response('Not found', { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;

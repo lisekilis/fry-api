@@ -3,7 +3,6 @@ import {
 	APIEmbed,
 	APIInteractionResponseCallbackData,
 	APIInteractionResponseChannelMessageWithSource,
-	APIInteractionResponseUpdateMessage,
 	APIMessageActionRowComponent,
 	InteractionResponseType,
 	MessageFlags,

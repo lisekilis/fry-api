@@ -1,18 +1,15 @@
 import {
-	APIActionRowComponent,
 	APIApplicationCommandInteractionDataBasicOption,
-	APIButtonComponent,
 	APIChatInputApplicationCommandGuildInteraction,
 	APIEmbed,
 	APIEmbedField,
-	APIMessageActionRowComponent,
 	ApplicationCommandOptionType,
 	ButtonStyle,
 	ComponentType,
 	MessageFlags,
 } from 'discord-api-types/v10';
 import { messageResponse, embedResponse } from './responses';
-import { PhotoR2Object, PhotoR2Objects, PillowR2Objects, PillowType } from '../../types';
+import { PhotoR2Objects, PillowR2Objects, PillowType } from '../../types';
 import { patchSettings } from '../settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
 import { paginationButtons, listPillowsEmbed, listPhotosEmbed } from './util';
@@ -136,7 +133,7 @@ export async function handleConfigCommand(
 							const settings = await env.FRY_SETTINGS.list();
 							// Show current whitelist (if any)
 							if (settings.keys.length > 0) {
-								return messageResponse(`Current whitelist: \`\`\`ts\n${JSON.stringify(settings)}\`\`\``, MessageFlags.Ephemeral);
+								return messageResponse(`Current whitelist: \`\`\`ts\n${JSON.stringify(settings.keys)}\`\`\``, MessageFlags.Ephemeral);
 							}
 							return messageResponse('No whitelist set', MessageFlags.Ephemeral);
 						}
@@ -507,20 +504,21 @@ export async function handleViewCommand(interaction: APIChatInputApplicationComm
 			return embedResponse(embed, 'Pillow details', MessageFlags.Ephemeral);
 
 		case 'photo':
-			const photoId = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
+			let photoId = interaction.data.options[0].options?.find((option) => option.name === 'id')?.value as string;
 
-			let photoIdToFetch = photoId;
-			if (!photoIdToFetch) {
-				const list = await env.FRY_PHOTOS.list();
-				if (list.objects && list.objects.length > 0) {
-					const randomIndex = Math.floor(Math.random() * list.objects.length);
-					photoIdToFetch = list.objects[randomIndex].key;
+			// If no ID provided, pick a random photo
+			if (!photoId) {
+				const photoList = await env.FRY_PHOTOS.list({ include: ['customMetadata'] });
+
+				if (photoList.objects && photoList.objects.length > 0) {
+					const randomIndex = Math.floor(Math.random() * photoList.objects.length);
+					photoId = photoList.objects[randomIndex].key;
+				} else {
+					return messageResponse('No photos found', MessageFlags.Ephemeral);
 				}
 			}
 
-			if (!photoIdToFetch) return messageResponse('Photo not found', MessageFlags.Ephemeral);
-
-			const photo = await env.FRY_PHOTOS.get(photoIdToFetch);
+			const photo = await env.FRY_PHOTOS.get(photoId);
 			if (!photo) return messageResponse('Photo not found', MessageFlags.Ephemeral);
 
 			const photoEmbed = {
