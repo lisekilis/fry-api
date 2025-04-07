@@ -14,17 +14,11 @@ import {
  * @param command.execute - Function that handles the command execution
  * @returns The command object enhanced with a register method
  */
-export function slashCommand<TOptions extends APIApplicationCommandOption[] = []>(command: {
+export function slashCommand(command: {
 	name: string;
 	description: string;
-	options?: TOptions;
-	execute: (
-		interaction: APIChatInputApplicationCommandInteraction & {
-			data: {
-				options: TOptions extends [] ? undefined : APIApplicationCommandInteractionDataOption[] /* & {}[] */;
-			};
-		}
-	) => Promise<Response>;
+	options?: APIApplicationCommandOption[];
+	execute: (interaction: APIChatInputApplicationCommandInteraction) => Promise<Response>;
 }) {
 	return {
 		...command,
