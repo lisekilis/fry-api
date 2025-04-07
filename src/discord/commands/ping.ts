@@ -19,7 +19,7 @@ export default slashCommand({
 		const startTime = getTimestamp(`${BigInt(interaction.id)}`);
 		const endTime = Date.now();
 		const ping = endTime - startTime;
-		const ephemeral = interaction.data.options?.find((option) => option.name === 'ephemeral');
+		const ephemeral = interaction.data.options.find((option) => option.name === 'ephemeral');
 
 		return messageResponse(`Pong! Latency: ${ping}ms`);
 	},

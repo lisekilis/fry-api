@@ -1,4 +1,9 @@
-import { APIApplicationCommandOption, APIChatInputApplicationCommandInteraction, ApplicationCommandType } from 'discord-api-types/v10';
+import {
+	APIApplicationCommandOption,
+	APIChatInputApplicationCommandInteraction,
+	ApplicationCommandType,
+	APIApplicationCommandInteractionDataOption,
+} from 'discord-api-types/v10';
 
 /**
  * Creates a Discord slash command with registration capability
@@ -9,11 +14,17 @@ import { APIApplicationCommandOption, APIChatInputApplicationCommandInteraction,
  * @param command.execute - Function that handles the command execution
  * @returns The command object enhanced with a register method
  */
-export function slashCommand(command: {
+export function slashCommand<TOptions extends APIApplicationCommandOption[] = []>(command: {
 	name: string;
 	description: string;
-	options?: APIApplicationCommandOption[];
-	execute: (interaction: APIChatInputApplicationCommandInteraction) => Promise<Response>;
+	options?: TOptions;
+	execute: (
+		interaction: APIChatInputApplicationCommandInteraction & {
+			data: {
+				options: TOptions extends [] ? undefined : APIApplicationCommandInteractionDataOption[] /* & {}[] */;
+			};
+		}
+	) => Promise<Response>;
 }) {
 	return {
 		...command,
