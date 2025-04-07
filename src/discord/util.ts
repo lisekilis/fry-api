@@ -6,7 +6,7 @@ import {
 	ButtonStyle,
 	ComponentType,
 } from 'discord-api-types/v10';
-import { PhotoR2Objects, PillowR2Objects } from '../../types';
+import { PhotoR2Objects, PillowR2Objects } from '../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
 
 export function paginationButtons(

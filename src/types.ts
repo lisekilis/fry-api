@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, ApplicationCommandType } from 'discord-api-types/v10';
+import { APIInteractionResponse, ApplicationCommandOptionType, ApplicationCommandType } from 'discord-api-types/v10';
 
 export enum PillowType {
 	NORMAL = 'Normal',

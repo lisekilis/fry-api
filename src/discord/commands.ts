@@ -9,8 +9,8 @@ import {
 	MessageFlags,
 } from 'discord-api-types/v10';
 import { messageResponse, embedResponse } from './responses';
-import { PhotoR2Objects, PillowR2Objects, PillowType } from '../../types';
-import { patchSettings } from '../settingsHandlers';
+import { PhotoR2Objects, PillowR2Objects, PillowType } from '../types';
+import { patchSettings } from '../handlers/settingsHandlers';
 import { getTimestamp } from 'discord-snowflake';
 import { paginationButtons, listPillowsEmbed, listPhotosEmbed } from './util';
 

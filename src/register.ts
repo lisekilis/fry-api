@@ -401,7 +401,7 @@ async function registerGlobalCommands() {
 		}
 	} catch (error) {
 		console.error('Error registering commands:', error);
-		process.exit(1); // Exit the process with a failure code
+		process.exit(1);
 	}
 }
 

@@ -12,13 +12,11 @@ export function messageResponse(content: string, flags?: MessageFlags): Response
 	const response = {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
-			tts: false,
 			content,
-			embeds: [],
 			allowed_mentions: { parse: [] },
 			flags,
-		},
-	};
+		} as APIInteractionResponseCallbackData,
+	} as APIInteractionResponseChannelMessageWithSource;
 
 	return new Response(JSON.stringify(response), {
 		status: 200,

@@ -5,12 +5,12 @@ import {
 	InteractionResponseType,
 	MessageFlags,
 } from 'discord-api-types/v10';
-import { messageResponse } from './discord/responses';
-import { handleApplicationCommand } from './discord/index';
-import { handleMessageComponent } from './discord/components';
+import { messageResponse } from '../discord/responses';
+import { handleApplicationCommand } from '../discord/index';
+import { handleMessageComponent } from '../discord/components';
 import { verifyKey } from 'discord-interactions';
 import { isGuildInteraction } from 'discord-api-types/utils';
-import { verifyWhitelist } from './discord/util';
+import { verifyWhitelist } from '../discord/util';
 
 // Discord webhook handler
 export async function handleDiscordInteractions(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

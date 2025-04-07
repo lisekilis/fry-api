@@ -12,7 +12,7 @@ import {
 import { messageResponse } from './responses';
 import { isGuildInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
 import { listPhotosEmbed, listPillowsEmbed, paginationButtons } from './util';
-import { PhotoR2Objects, PillowR2Objects } from '../../types';
+import { PhotoR2Objects, PillowR2Objects } from '../types';
 
 export async function handleMessageComponent(
 	interaction: APIMessageComponentInteraction,
