@@ -4,26 +4,24 @@ import {
 	APIApplicationCommandOption,
 	APIApplicationCommandSubcommandGroupOption,
 	APIApplicationCommandSubcommandOption,
-	APIChatInputApplicationCommandGuildInteraction,
+	APIChatInputApplicationCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	MessageFlags,
 } from 'discord-api-types/v10';
 import { messageResponse } from '../responses';
+import { isChatInputApplicationCommandInteraction } from 'discord-api-types/utils';
 
-export default async function (interaction: APIApplicationCommandInteraction): Promise<Response> {
+export default async function (interaction: APIApplicationCommandInteraction, env: Env, ctx: ExecutionContext): Promise<Response> {
 	try {
 		const commandName = interaction.data.name;
 		const modulePath = `./${commandName}.ts`; // Construct the file path dynamically
-		const commandModule = await import(modulePath); // Dynamically import the module
-		if (commandModule.default) {
-			return await commandModule.default(interaction); // Call the default export
-		} else {
-			return messageResponse('Command module not found', MessageFlags.Ephemeral);
-		}
+		const commandModule = (await import(modulePath)) as ChatInputCommand; // Dynamically import the module
+		if (isChatInputApplicationCommandInteraction(interaction)) return await commandModule.execute(interaction, env, ctx);
 	} catch (error) {
 		return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 	}
+	return messageResponse('Command not found', MessageFlags.Ephemeral);
 }
 
 export function command(command: ChatInputCommandParameters): ChatInputCommand {
@@ -46,17 +44,17 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 		return {
 			...command,
 			options: [...subcommandOptions, ...subcommandGroupOptions],
-			execute: (interaction: APIChatInputApplicationCommandGuildInteraction) => {
+			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
 				if (!interaction.data.options) return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 				if (interaction.data.options[0].type === ApplicationCommandOptionType.Subcommand && command.subcommands) {
-					return findSubcommand(interaction.data.options[0].name, command.subcommands)?.execute(interaction);
+					return findSubcommand(interaction.data.options[0].name, command.subcommands)?.execute(interaction, env, ctx);
 				}
 				if (interaction.data.options[0].type === ApplicationCommandOptionType.SubcommandGroup && command.subcommandGroups) {
 					return findSubcommand(
 						interaction.data.options[0].name,
 						interaction.data.options[0].options[0].name,
 						command.subcommandGroups
-					)?.execute(interaction);
+					)?.execute(interaction, env, ctx);
 				}
 				return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 			},
@@ -66,10 +64,10 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 		return {
 			...command,
 			options: subcommandOptions,
-			execute: (interaction: APIChatInputApplicationCommandGuildInteraction) => {
+			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
 				if (!interaction.data.options) return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 				if (interaction.data.options[0].type === ApplicationCommandOptionType.Subcommand && command.subcommands) {
-					return findSubcommand(interaction.data.options[0].name, command.subcommands)?.execute(interaction);
+					return findSubcommand(interaction.data.options[0].name, command.subcommands)?.execute(interaction, env, ctx);
 				}
 				return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 			},
@@ -79,14 +77,14 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 		return {
 			...command,
 			options: subcommandGroupOptions,
-			execute: (interaction: APIChatInputApplicationCommandGuildInteraction) => {
+			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
 				if (!interaction.data.options) return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 				if (interaction.data.options[0].type === ApplicationCommandOptionType.SubcommandGroup && command.subcommandGroups) {
 					return findSubcommand(
 						interaction.data.options[0].name,
 						interaction.data.options[0].options[0].name,
 						command.subcommandGroups
-					)?.execute(interaction);
+					)?.execute(interaction, env, ctx);
 				}
 				return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 			},
@@ -143,7 +141,7 @@ type BasicCommandData = {
 type BasicCommand = BasicCommandData & {
 	type: ApplicationCommandType.ChatInput;
 	options?: APIApplicationCommandBasicOption[];
-	execute: (interaction: APIChatInputApplicationCommandGuildInteraction) => Promise<Response>;
+	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
 type ChatInputCommandGroup = BasicCommandData & {
@@ -151,7 +149,7 @@ type ChatInputCommandGroup = BasicCommandData & {
 	options: APIApplicationCommandOption[];
 	subcommandGroups?: SubCommandGroup[];
 	subcommands?: SubCommand[];
-	execute: (interaction: APIChatInputApplicationCommandGuildInteraction) => Promise<Response>;
+	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
 type SubCommandGroup = BasicCommandData & {
@@ -165,5 +163,5 @@ type SubCommandGroupParameters = Omit<SubCommandGroup, 'options'>;
 type SubCommand = BasicCommandData & {
 	type: ApplicationCommandOptionType.Subcommand;
 	options?: APIApplicationCommandBasicOption[];
-	execute: (interaction: APIChatInputApplicationCommandGuildInteraction) => Promise<Response>;
+	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
