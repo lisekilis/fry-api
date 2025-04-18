@@ -1,13 +1,17 @@
 import {
 	APIActionRowComponent,
+	APIChatInputApplicationCommandInteraction,
 	APIEmbed,
 	APIInteraction,
 	APIMessageActionRowComponent,
+	ApplicationCommandOptionType,
 	ButtonStyle,
 	ComponentType,
 } from 'discord-api-types/v10';
 import { PhotoR2Objects, PillowR2Objects } from '../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
+import { APIChatInputApplicationGroupSubcommandInteraction } from './commands';
+import { APIChatInputApplicationSubcommandInteraction } from './commands';
 
 export function paginationButtons(
 	pageSize: number,
@@ -126,4 +130,24 @@ export async function verifyWhitelist(interaction: APIInteraction, env: Env): Pr
 	}
 	if (interaction.user?.id === env.FRY_OWNER_ID) return true;
 	return false;
+}
+
+export function isSubcommandInteraction(
+	interaction: APIChatInputApplicationCommandInteraction
+): interaction is APIChatInputApplicationSubcommandInteraction {
+	if (!interaction.data.options || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand) return false;
+	return true;
+}
+
+export function isGroupSubcommandInteraction(
+	interaction: APIChatInputApplicationCommandInteraction
+): interaction is APIChatInputApplicationGroupSubcommandInteraction {
+	if (
+		!interaction.data.options ||
+		interaction.data.options[0].type !== ApplicationCommandOptionType.SubcommandGroup ||
+		!interaction.data.options[0].options ||
+		interaction.data.options[0].options[0].type !== ApplicationCommandOptionType.Subcommand
+	)
+		return false;
+	return true;
 }

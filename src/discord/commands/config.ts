@@ -7,7 +7,8 @@ import {
 } from 'discord-api-types/v10';
 import { patchSettings } from '../../handlers';
 import { messageResponse } from '../responses';
-import { command, subcommand, subcommandGroup } from '.';
+import { command, groupSubcommand, subcommand, subcommandGroup } from '.';
+import { isGuildInteraction } from 'discord-api-types/utils';
 
 export default command({
 	name: 'config',
@@ -25,9 +26,89 @@ export default command({
 					description: 'Role to be set as image moderator',
 				},
 			],
-			execute: async (interaction) => {
+			execute: async (interaction, env) => {
+				if (!interaction.data.options || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
+					return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
+				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
+				if (interaction.member.user.id !== env.FRY_OWNER_ID && !interaction.member.permissions.includes('Administrator'))
+					return messageResponse(`Only <@${env.FRY_OWNER_ID}> and Administrators can change the mod role`, MessageFlags.Ephemeral);
+				if (!interaction.data.options[0].options) {
+					const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+					const parsedSettings = settings ? JSON.parse(settings) : {};
+					if (parsedSettings.modRoleId) {
+						return messageResponse(`Current mod role: <@&${parsedSettings.modRoleId}>`, MessageFlags.Ephemeral);
+					}
+					return messageResponse('No mod role set', MessageFlags.Ephemeral);
+				}
+				const roleOption = interaction.data.options[0].options.find(
+					(option) => option.name === 'role'
+				) as APIApplicationCommandInteractionDataBasicOption;
+				if (!roleOption || typeof roleOption.value !== 'string') {
+					return messageResponse('Invalid role provided', MessageFlags.Ephemeral);
+				}
+				await patchSettings(interaction.guild_id, { modRoleId: roleOption.value }, env);
+				console.log(`Setting mod role: ${roleOption.value} for guild: ${interaction.guild_id}`);
+
 				return messageResponse('Mod role set successfully', MessageFlags.Ephemeral);
 			},
+		}),
+	],
+	subcommandGroups: [
+		subcommandGroup({
+			name: 'channel',
+			description: 'Configure the app channels',
+			type: ApplicationCommandOptionType.SubcommandGroup,
+			subcommands: [
+				groupSubcommand({
+					name: 'pillow',
+					description: 'Set the pillow channel',
+					type: ApplicationCommandOptionType.Subcommand,
+					options: [
+						{
+							name: 'channel',
+							type: ApplicationCommandOptionType.Channel,
+							description: 'Channel to be set as pillow channel',
+						},
+					],
+					execute: async (interaction, env) => {
+						if (!isGuildInteraction(interaction))
+							return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
+						if (interaction.member.user.id !== env.FRY_OWNER_ID && !interaction.member.permissions.includes('Administrator'))
+							return messageResponse(
+								`Only <@${env.FRY_OWNER_ID}> and Administrators can change the pillow channel`,
+								MessageFlags.Ephemeral
+							);
+						if (!interaction.data.options[0].options) {
+							const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
+							const parsedSettings = settings ? JSON.parse(settings) : {};
+							if (parsedSettings.pillowChannelId) {
+								return messageResponse(`Current pillow channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
+							}
+							return messageResponse('No pillow channel set', MessageFlags.Ephemeral);
+						}
+						const pillowChannelOption = interaction.data.options[0].options.find((option) => option.name === 'channel');
+						if (!pillowChannelOption || typeof pillowChannelOption.value !== 'string') {
+							return messageResponse('Invalid channel provided', MessageFlags.Ephemeral);
+						}
+						await patchSettings(interaction.guild_id, { pillowChannelId: pillowChannelOption.value }, env);
+						console.log(`Setting pillow channel: ${pillowChannelOption.value} for guild: ${interaction.guild_id}`);
+						return messageResponse('Pillow channel set successfully', MessageFlags.Ephemeral);
+					},
+				}),
+				groupSubcommand({
+					name: 'photo',
+					description: 'Set the photo channel',
+					type: ApplicationCommandOptionType.Subcommand,
+					options: [
+						{
+							name: 'channel',
+							type: ApplicationCommandOptionType.Channel,
+							description: 'Channel to be set as photo channel',
+						},
+					],
+					execute: async (interaction, env) => {},
+				}),
+			],
 		}),
 	],
 });

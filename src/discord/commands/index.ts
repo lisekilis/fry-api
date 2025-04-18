@@ -1,6 +1,8 @@
 import {
 	APIApplicationCommandBasicOption,
 	APIApplicationCommandInteraction,
+	APIApplicationCommandInteractionDataSubcommandGroupOption,
+	APIApplicationCommandInteractionDataSubcommandOption,
 	APIApplicationCommandOption,
 	APIApplicationCommandSubcommandGroupOption,
 	APIApplicationCommandSubcommandOption,
@@ -11,6 +13,7 @@ import {
 } from 'discord-api-types/v10';
 import { messageResponse } from '../responses';
 import { isChatInputApplicationCommandInteraction } from 'discord-api-types/utils';
+import { isGroupSubcommandInteraction, isSubcommandInteraction } from '../util';
 
 export default async function (interaction: APIApplicationCommandInteraction, env: Env, ctx: ExecutionContext): Promise<Response> {
 	try {
@@ -45,11 +48,10 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 			...command,
 			options: [...subcommandOptions, ...subcommandGroupOptions],
 			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
-				if (!interaction.data.options) return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
-				if (interaction.data.options[0].type === ApplicationCommandOptionType.Subcommand && command.subcommands) {
+				if (isSubcommandInteraction(interaction) && command.subcommands) {
 					return findSubcommand(interaction.data.options[0].name, command.subcommands)?.execute(interaction, env, ctx);
 				}
-				if (interaction.data.options[0].type === ApplicationCommandOptionType.SubcommandGroup && command.subcommandGroups) {
+				if (isGroupSubcommandInteraction(interaction) && command.subcommandGroups) {
 					return findSubcommand(
 						interaction.data.options[0].name,
 						interaction.data.options[0].options[0].name,
@@ -93,7 +95,7 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 	throw new Error('Command must have either subcommand or subcommand group options');
 }
 
-export function subcommandGroup(command: SubCommandGroupParameters): SubCommandGroup {
+export function subcommandGroup(command: SubcommandGroupParameters): SubcommandGroup {
 	return {
 		...command,
 		options: command.subcommands.map((subcommand) => ({
@@ -105,17 +107,20 @@ export function subcommandGroup(command: SubCommandGroupParameters): SubCommandG
 	};
 }
 
-export function subcommand(command: SubCommand): SubCommand {
+export function subcommand(command: Subcommand): Subcommand {
+	return command;
+}
+export function groupSubcommand(command: GroupSubcommand): GroupSubcommand {
 	return command;
 }
 
-export function findSubcommand(name: string, subcommands: SubCommand[]): SubCommand | undefined;
-export function findSubcommand(groupName: string, name: string, subcommandGroups: SubCommandGroup[]): SubCommand | undefined;
+export function findSubcommand(name: string, subcommands: Subcommand[]): Subcommand | undefined;
+export function findSubcommand(groupName: string, name: string, subcommandGroups: SubcommandGroup[]): GroupSubcommand | undefined;
 export function findSubcommand(
 	nameOrGroupName: string,
-	nameOrSubcommands?: string | SubCommand[],
-	subcommandGroups?: SubCommandGroup[]
-): SubCommand | undefined {
+	nameOrSubcommands?: string | Subcommand[],
+	subcommandGroups?: SubcommandGroup[]
+): Subcommand | GroupSubcommand | undefined {
 	if (typeof nameOrSubcommands === 'string' && Array.isArray(subcommandGroups)) {
 		// Handle the case with groupName, name, and subcommandGroups
 		const group = subcommandGroups.find((subcommandGroup) => subcommandGroup.name === nameOrGroupName);
@@ -147,21 +152,34 @@ type BasicCommand = BasicCommandData & {
 type ChatInputCommandGroup = BasicCommandData & {
 	type: ApplicationCommandType.ChatInput;
 	options: APIApplicationCommandOption[];
-	subcommandGroups?: SubCommandGroup[];
-	subcommands?: SubCommand[];
+	subcommandGroups?: SubcommandGroup[];
+	subcommands?: Subcommand[];
 	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
-type SubCommandGroup = BasicCommandData & {
+type SubcommandGroup = BasicCommandData & {
 	type: ApplicationCommandOptionType.SubcommandGroup;
 	options?: APIApplicationCommandSubcommandOption[];
-	subcommands: SubCommand[];
+	subcommands: GroupSubcommand[];
 };
 
-type SubCommandGroupParameters = Omit<SubCommandGroup, 'options'>;
+type SubcommandGroupParameters = Omit<SubcommandGroup, 'options'>;
 
-type SubCommand = BasicCommandData & {
+type Subcommand = BasicCommandData & {
 	type: ApplicationCommandOptionType.Subcommand;
 	options?: APIApplicationCommandBasicOption[];
-	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	execute: (interaction: APIChatInputApplicationSubcommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+};
+
+type GroupSubcommand = BasicCommandData & {
+	type: ApplicationCommandOptionType.Subcommand;
+	options?: APIApplicationCommandBasicOption[];
+	execute: (interaction: APIChatInputApplicationGroupSubcommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+};
+
+export type APIChatInputApplicationSubcommandInteraction = APIChatInputApplicationCommandInteraction & {
+	data: { options: APIApplicationCommandInteractionDataSubcommandOption[] };
+};
+export type APIChatInputApplicationGroupSubcommandInteraction = APIChatInputApplicationCommandInteraction & {
+	data: { options: APIApplicationCommandInteractionDataSubcommandGroupOption[] };
 };
