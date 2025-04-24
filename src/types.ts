@@ -1,5 +1,3 @@
-import { APIInteractionResponse, ApplicationCommandOptionType, ApplicationCommandType } from 'discord-api-types/v10';
-
 export enum PillowType {
 	NORMAL = 'Normal',
 	BODY = 'Dakimakura',
@@ -60,28 +58,8 @@ export type PillowR2Objects = R2Objects<PillowData>;
 export type PhotoR2Objects = R2Objects<PhotoData>;
 
 export type Settings = {
-	modRoleId: string;
-	photoChannelId: string;
-	pillowChannelId: string;
-};
-
-export type Command = {
-	name: string;
-	type: ApplicationCommandType;
-	description: string;
-	options?: CommandOption[];
-};
-
-type CommandOption = {
-	name: string;
-	type: ApplicationCommandOptionType;
-	description: string;
-	required?: boolean;
-	choices?: choice[];
-	options?: CommandOption[];
-};
-
-type choice = {
-	name: string;
-	value: string;
+	name?: string; // also used to indicate whitelist
+	modRoleId?: string;
+	photoChannelId?: string;
+	pillowChannelId?: string;
 };

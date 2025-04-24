@@ -10,8 +10,7 @@ import {
 } from 'discord-api-types/v10';
 import { PhotoR2Objects, PillowR2Objects } from '../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
-import { APIChatInputApplicationGroupSubcommandInteraction } from './commands';
-import { APIChatInputApplicationSubcommandInteraction } from './commands';
+import { APIChatInputApplicationSubcommandInteraction, APIChatInputApplicationGroupSubcommandInteraction } from './types';
 
 export function paginationButtons(
 	pageSize: number,
