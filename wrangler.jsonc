@@ -28,6 +28,10 @@
 		{
 			"binding": "FRY_SETTINGS",
 			"id": "bb2f9794bcd44d02912be163a6b116a7"
+		},
+		{
+			"binding": "FRY_COOLDOWN",
+			"id": "372db8c2ceca4f7b8ec5e83b2d8751a7"
 		}
 	]
 	/**

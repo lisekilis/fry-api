@@ -5,6 +5,7 @@ interface Env {
 	FRY_PILLOWS: R2Bucket;
 	FRY_PHOTOS: R2Bucket;
 	FRY_PILLOW_SUBMISSIONS: R2Bucket;
+	FRY_COOLDOWN: KVNamespace;
 
 	DISCORD_APP_ID: string;
 	DISCORD_PUBLIC_KEY: string;

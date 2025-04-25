@@ -1,9 +1,9 @@
 import {
 	APIActionRowComponent,
+	APIComponentInMessageActionRow,
 	APIEmbed,
 	APIInteractionResponseCallbackData,
 	APIInteractionResponseChannelMessageWithSource,
-	APIMessageActionRowComponent,
 	InteractionResponseType,
 	MessageFlags,
 } from 'discord-api-types/v10';
@@ -28,7 +28,7 @@ export function embedResponse(
 	embed: APIEmbed,
 	content?: string,
 	flags?: MessageFlags,
-	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
+	components?: APIActionRowComponent<APIComponentInMessageActionRow>[],
 	attachment?: { data: ArrayBuffer; filename: string; contentType: string }
 ): Response {
 	const response: APIInteractionResponseChannelMessageWithSource = {

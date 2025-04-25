@@ -62,4 +62,5 @@ export type Settings = {
 	modRoleId?: string;
 	photoChannelId?: string;
 	pillowChannelId?: string;
+	cooldown?: number; // in ms
 };
