@@ -6,13 +6,14 @@ import {
 	APIApplicationCommandSubcommandOption,
 	APIChatInputApplicationCommandInteraction,
 	APIChatInputApplicationCommandInteractionData,
+	APIMessageComponentInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 } from 'discord-api-types/v10';
 
 export type ChatInputCommand = BasicCommand | ChatInputCommandGroup;
 
-export type ChatInputCommandParameters = BasicCommand | Omit<ChatInputCommandGroup, 'options' | 'execute'>;
+export type ChatInputCommandParameters = BasicCommand | Omit<ChatInputCommandGroup, 'options' | 'execute' | 'executeComponent'>;
 
 type BasicCommandData = {
 	name: string;
@@ -23,6 +24,7 @@ type BasicCommand = BasicCommandData & {
 	type: ApplicationCommandType.ChatInput;
 	options?: APIApplicationCommandBasicOption[];
 	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
 export type ChatInputCommandGroup = BasicCommandData & {
@@ -31,6 +33,7 @@ export type ChatInputCommandGroup = BasicCommandData & {
 	subcommandGroups?: SubcommandGroup[];
 	subcommands?: Subcommand[];
 	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
 export type SubcommandGroup = BasicCommandData & {
@@ -45,12 +48,14 @@ export type Subcommand = BasicCommandData & {
 	type: ApplicationCommandOptionType.Subcommand;
 	options?: APIApplicationCommandBasicOption[];
 	execute: (interaction: APIChatInputApplicationSubcommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
 export type GroupSubcommand = BasicCommandData & {
 	type: ApplicationCommandOptionType.Subcommand;
 	options?: APIApplicationCommandBasicOption[];
 	execute: (interaction: APIChatInputApplicationGroupSubcommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
 };
 
 interface APIChatInputApplicationSubcommandInteractionData extends Omit<APIChatInputApplicationCommandInteractionData, 'options'> {

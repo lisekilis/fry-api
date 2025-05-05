@@ -1,18 +1,19 @@
 import {
 	APIEmbed,
 	APIEmbedField,
-	APIInteractionResponseCallbackData,
 	APIInteractionResponseChannelMessageWithSource,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
+	ButtonStyle,
+	ComponentType,
 	InteractionResponseType,
 	MessageFlags,
-	RESTPostAPIInteractionCallbackJSONBody,
 } from 'discord-api-types/v10';
 import { command, subcommand } from '.';
 import { PillowType, Settings } from '../../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
-import { embedResponse, messageResponse } from '../responses';
+import { messageResponse } from '../responses';
+import { parse } from 'path';
 
 export default command({
 	name: 'submit',
@@ -93,6 +94,7 @@ export default command({
 				const userName = (usernameOption?.value as string) || interaction.member.user.username;
 				const type = typeOption.value as PillowType;
 				const name = nameOption.value as string;
+				const userId = interaction.member.user.id;
 
 				const attachment = interaction.data.resolved?.attachments?.[textureOption.value as string];
 				if (!attachment) return messageResponse('Texture attachment not found', MessageFlags.Ephemeral);
@@ -110,7 +112,7 @@ export default command({
 							contentType: 'image/png',
 						},
 						customMetadata: {
-							userId: interaction.member.user.id,
+							userId,
 							userName,
 							name,
 							type,
@@ -124,12 +126,109 @@ export default command({
 					);
 				}
 
-				// Post to the submissions channel
+				// Submission flavor text
+				const pillowText = [
+					`Pillow just landed! Courtesy of <@${userId}>.`,
+					`Soft and squishy incoming! New pillow submission.`,
+					`Pillow magic happening thanks to <@${userId}>!`,
+					`A delightful new pillow has surfaced.`,
+					`Get your comfy on! New pillow alert.`,
+					`Pillow vibes are strong with this new submission.`,
+					`Look what just rolled in... a pillow!`,
+					`Freshly baked pillow, straight from <@${userId}>'s oven!`,
+					`This pillow submission is brought to you by <@${userId}>.`,
+					`Snuggle up! A new pillow has arrived on the scene.`,
+					`The pillow gods have smiled upon us!`,
+					`Another fantastic pillow joins the collection.`,
+					`Feast your eyes on this brand-new pillow!`,
+					`<@${userId}> is on a roll! Pillow edition.`,
+					`This pillow submission is pure comfort.`,
+					`Brace yourselves... a new pillow is here!`,
+					`We've got a soft spot for this new pillow.`,
+					`Take a peek at the latest pillow creation!`,
+					`Pillow power hour, initiated by <@${userId}>!`,
+					`A fluffy friend has arrived, thanks to <@${userId}>.`,
+					`New pillow unlocked!`,
+					`Achievement unlocked: Pillow Submission by <@${userId}>.`,
+					`Warning: May cause extreme comfort. New pillow detected.`,
+					`You've got mail! ...and it's a pillow!`,
+					`Guess what? New pillow!`,
+					`A wild pillow appears!`,
+					`Fresh pillow just dropped by <@${userId}>!`,
+					`Look what the cat dragged in... a new pillow!`,
+					`Pillow alert! <@${userId}> has blessed us.`,
+					`A comfy challenger approaches!`,
+					`Someone's been busy! New pillow submission.`,
+					`Pillow power activated by <@${userId}>!`,
+					`Get ready to fluff! A pillow has arrived.`,
+					`The pillow parade continues! Thanks, <@${userId}>!`,
+					`Another one! Pillow submission incoming.`,
+					`May the fluff be with you. New pillow from <@${userId}>.`,
+					`*squish* A new pillow has entered the arena!`,
+					`Behold! The latest pillow creation.`,
+					`A brand new pillow for your viewing pleasure.`,
+					`<@${userId}> strikes again! This time with a pillow.`,
+					`The fluff is real! New pillow submission.`,
+					`Prepare for maximum comfort! A pillow is here.`,
+					`We've got a new pillow in the house!`,
+					`Check out this fresh pillow submission!`,
+					`Pillow time! Thanks to <@${userId}>.`,
+					`A soft new addition from <@${userId}>.`,
+				];
 
+				// Post to the submissions channel
 				const response: APIInteractionResponseChannelMessageWithSource = {
 					type: InteractionResponseType.ChannelMessageWithSource,
 					data: {
 						flags: MessageFlags.IsComponentsV2,
+						components: [
+							{
+								type: ComponentType.TextDisplay,
+								content: pillowText[Math.floor(Math.random() * pillowText.length)],
+							},
+							{
+								type: ComponentType.Container,
+								components: [
+									{
+										type: ComponentType.TextDisplay,
+										content: `# <@${userId}>'s Pillow Submission`,
+									},
+									{
+										type: ComponentType.MediaGallery,
+										items: [
+											{
+												media: { url: `attachment://${userId}_${type}.png` },
+												description: name,
+											},
+										],
+									},
+									{
+										type: ComponentType.TextDisplay,
+										content: `### **Name:** ${name} | **Type:** ${type}`,
+									},
+									{
+										type: ComponentType.Separator,
+									},
+									{
+										type: ComponentType.ActionRow,
+										components: [
+											{
+												type: ComponentType.Button,
+												style: ButtonStyle.Primary,
+												label: 'Approve',
+												custom_id: `submit.pillow-approve-${type}-${name}-${userName}`,
+											},
+											{
+												type: ComponentType.Button,
+												style: ButtonStyle.Danger,
+												label: 'Deny',
+												custom_id: `submit.pillow-deny-${type}-${name}-${userName}`,
+											},
+										],
+									},
+								],
+							},
+						],
 						attachments: [
 							{
 								id: '0',
@@ -138,163 +237,43 @@ export default command({
 						],
 					},
 				};
-				return new Response(JSON.stringify(response), {
+				const responseBody = new FormData();
+
+				responseBody.append('payload_json', JSON.stringify(response));
+				const file = new Blob([imageBuffer], { type: 'image/png' });
+				responseBody.append('files[0]', file, `${interaction.member.user.id}_${type}.png`);
+
+				return new Response(responseBody, {
 					status: 200,
-					headers: { 'Content-Type': 'application/json' },
+					headers: { 'Content-Type': 'multipart/form-data' },
 				});
 			},
-		}),
-	],
-});
-
-export async function handleSubmitCommand(interaction: APIChatInputApplicationCommandGuildInteraction, env: Env): Promise<Response> {
-	// Guard conditions - ensure we have proper subcommand
-	if (!interaction.data.options?.[0]) return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
-
-	if (interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
-		return messageResponse('Please provide a valid subcommand', MessageFlags.Ephemeral);
-
-	try {
-		const subcommand = interaction.data.options[0];
-		switch (subcommand.name) {
-			case 'pillow': {
-				// Ensure settings are configured
+			executeComponent: async (interaction, customId, env) => {
+				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
+				const [action, type, name, userName] = customId.split('-');
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
-				const parsedSettings = settings ? JSON.parse(settings) : {};
-				if (!parsedSettings.pillowChannelId) {
-					return messageResponse(
-						'The pillow submissions channel has not been configured. Please ask an admin to set it up.',
-						MessageFlags.Ephemeral
-					);
-				}
-				if (!parsedSettings.modRoleId) {
+				const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
+
+				if (!parsedSettings.modRoleId)
 					return messageResponse(
 						'The image moderator role has not been configured. Please ask an admin to set it up.',
 						MessageFlags.Ephemeral
 					);
-				}
-				if (interaction.channel.id !== parsedSettings.pillowChannelId)
-					return messageResponse(`Please use the pillow submissions channel: <#${parsedSettings.pillowChannelId}>`, MessageFlags.Ephemeral);
+				if (!interaction.member.roles.includes(parsedSettings.modRoleId))
+					return messageResponse('Only image moderators are allowed to manage submissions', MessageFlags.Ephemeral);
 
-				// Get pillow details
-				const nameOption = subcommand.options?.find((option) => option.name === 'name');
-				const typeOption = subcommand.options?.find((option) => option.name === 'type');
-				const textureOption = subcommand.options?.find((option) => option.name === 'texture');
-				const usernameOption = subcommand.options?.find((option) => option.name === 'username');
+				if (!interaction.message.interaction_metadata || !interaction.message.interaction_metadata.user)
+					return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
 
-				if (!nameOption || !typeOption || !textureOption) return messageResponse('Missing required options', MessageFlags.Ephemeral);
+				const pillowId = `${interaction.message.interaction_metadata?.user.id}_${type}`;
 
-				const pillowName = nameOption.value as string;
-				const pillowType = typeOption.value as PillowType;
-				const attachmentId = textureOption.value as string;
-				const userName = (usernameOption?.value as string) || interaction.member.user.username;
-
-				// Get the attached texture
-				const attachment = interaction.data.resolved?.attachments?.[attachmentId];
-				if (!attachment) {
-					return messageResponse('Texture attachment not found', MessageFlags.Ephemeral);
-				}
-				// Validate texture is png
-				if (!attachment.content_type?.includes('png')) {
-					return messageResponse('Texture must be a PNG image', MessageFlags.Ephemeral);
-				}
-				const response = await fetch(attachment.url);
-				if (!response.ok) {
-					return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
+				const pillow = await env.FRY_PILLOW_SUBMISSIONS.get(pillowId);
+				if (!pillow) return messageResponse('Pillow not found', MessageFlags.Ephemeral);
+				if (action === 'approve') {
 				}
 
-				const imageBuffer = await response.arrayBuffer();
-
-				// upload the pillow to r2
-				try {
-					await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${pillowType}`, imageBuffer, {
-						httpMetadata: {
-							contentType: 'image/png',
-						},
-						customMetadata: {
-							userId: interaction.member.user.id,
-							userName,
-							name: pillowName,
-							type: pillowType,
-						},
-					});
-				} catch (error) {
-					console.error('R2 upload error:', error);
-					return messageResponse(
-						`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-						MessageFlags.Ephemeral
-					);
-				}
-
-				// Create embed for the submission
-				const fields: APIEmbedField[] = [
-					{
-						name: 'Name:',
-						value: pillowName,
-						inline: true,
-					},
-					{
-						name: 'Type:',
-						value: pillowType,
-						inline: true,
-					},
-				];
-
-				const embed: APIEmbed = {
-					title: `${userName}'s Pillow Submission`,
-					description: `A new pillow submission has been received from <@${interaction.member.user.id}>`,
-					thumbnail: {
-						url: `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png`,
-					},
-					color: 0x9469c9,
-					fields,
-					image: {
-						url: `attachment://${interaction.member.user.id}_${pillowType}.png`,
-					},
-				};
-
-				// Post to the submissions channel
-
-				return embedResponse(
-					embed,
-					'New pillow submission received',
-					undefined,
-					[
-						{
-							type: ComponentType.ActionRow,
-							components: [
-								{
-									type: ComponentType.Button,
-									style: ButtonStyle.Primary,
-									label: 'Approve',
-									custom_id: 'approve',
-								},
-								{
-									type: ComponentType.Button,
-									style: ButtonStyle.Danger,
-									label: 'Deny',
-									custom_id: 'deny',
-								},
-							],
-						},
-					],
-					{
-						data: imageBuffer,
-						filename: `${interaction.member.user.id}_${pillowType}.png`,
-						contentType: 'image/png',
-					}
-				);
-			}
-
-			case 'photo': {
-				return messageResponse('Photo submissions are not yet implemented', MessageFlags.Ephemeral);
-			}
-
-			default:
-				return messageResponse(`Unknown submission type: ${subcommand.name}`, MessageFlags.Ephemeral);
-		}
-	} catch (error) {
-		console.error(`Error in handleSubmission: ${error}`);
-		return messageResponse('An error occurred while processing your submission', MessageFlags.Ephemeral);
-	}
-}
+				return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
+			},
+		}),
+	],
+});
