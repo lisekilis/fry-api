@@ -12,11 +12,11 @@ importers:
         specifier: ^22.15.2
         version: 22.15.2
       discord-api-types:
-        specifier: ^0.38.1
-        version: 0.38.1
+        specifier: ^0.38.5
+        version: 0.38.5
       discord-interactions:
-        specifier: ^4.1.1
-        version: 4.1.1
+        specifier: ^4.3.0
+        version: 4.3.0
       discord-snowflake:
         specifier: ^2.0.0
         version: 2.0.0
@@ -929,11 +929,11 @@ packages:
   devalue@4.3.3:
     resolution: {integrity: sha512-UH8EL6H2ifcY8TbD2QsxwCC/pr5xSwPvv85LrLXVihmHVC3T3YqTCIwnR5ak0yO1KYqlxrPVOA/JVZJYPy2ATg==}
 
-  discord-api-types@0.38.1:
-    resolution: {integrity: sha512-vsjsqjAuxsPhiwbPjTBeGQaDPlizFmSkU0mTzFGMgRxqCDIRBR7iTY74HacpzrDV0QtERHRKQEk1tq7drZUtHg==}
+  discord-api-types@0.38.5:
+    resolution: {integrity: sha512-2sRkDRid39myMMeRzVTWLc2PyafSxu6k3LHpkB1Lx6IVzqycRnIhOedCbXg3IYpbJhKvA7ErNAh0DA/nXG/1Uw==}
 
-  discord-interactions@4.1.1:
-    resolution: {integrity: sha512-dCrdJFSHQrEHXB8tk+LpIhAL7/+/UXCFDzooYmB6jj7b/zuhdbETpcZXLYQpSfcSRpF5wjmnu1XwuHlvdF1KpQ==}
+  discord-interactions@4.3.0:
+    resolution: {integrity: sha512-qCJEnuQeIDIo26MPEqYlIiYokqwFAMoRsmEE0PgAuiTYNXIMB9Z40LmqlgYe0yBO+743+AOnfTQdUK1WLg8+pw==}
     engines: {node: '>=18.4.0'}
 
   discord-snowflake@2.0.0:
@@ -1878,9 +1878,9 @@ snapshots:
 
   devalue@4.3.3: {}
 
-  discord-api-types@0.38.1: {}
+  discord-api-types@0.38.5: {}
 
-  discord-interactions@4.1.1: {}
+  discord-interactions@4.3.0: {}
 
   discord-snowflake@2.0.0: {}
 

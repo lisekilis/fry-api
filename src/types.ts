@@ -9,13 +9,17 @@ export type PillowData = {
 	userId: string;
 	name: string; // Fixed from 'bame'
 	type: PillowType;
+	/** ISO 8601 timestamp */
 	submittedAt: string;
+	/** ISO 8601 timestamp */
+	approvedAt: string;
 	userName: string;
 };
 
 export type PhotoData = {
 	date: string;
 	userId: string;
+	/** ISO 8601 timestamp */
 	submittedAt: string;
 	userName: string;
 };

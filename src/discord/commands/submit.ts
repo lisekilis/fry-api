@@ -2,18 +2,22 @@ import {
 	APIEmbed,
 	APIEmbedField,
 	APIInteractionResponseChannelMessageWithSource,
+	APIInteractionResponseUpdateMessage,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ButtonStyle,
 	ComponentType,
 	InteractionResponseType,
 	MessageFlags,
+	RouteBases,
+	Routes,
 } from 'discord-api-types/v10';
 import { command, subcommand } from '.';
-import { PillowType, Settings } from '../../types';
+import { PillowData, PillowType, Settings } from '../../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
 import { messageResponse } from '../responses';
 import { parse } from 'path';
+import { getDate, getTimestamp } from 'discord-snowflake';
 
 export default command({
 	name: 'submit',
@@ -106,25 +110,25 @@ export default command({
 				const imageBuffer = await attachmentResponse.arrayBuffer();
 
 				// upload the pillow to r2
-				try {
-					await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${type}`, imageBuffer, {
-						httpMetadata: {
-							contentType: 'image/png',
-						},
-						customMetadata: {
-							userId,
-							userName,
-							name,
-							type,
-						},
-					});
-				} catch (error) {
-					console.error('R2 upload error:', error);
-					return messageResponse(
-						`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-						MessageFlags.Ephemeral
-					);
-				}
+				// try {
+				// 	await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${type}`, imageBuffer, {
+				// 		httpMetadata: {
+				// 			contentType: 'image/png',
+				// 		},
+				// 		customMetadata: {
+				// 			userId,
+				// 			userName,
+				// 			name,
+				// 			type,
+				// 		},
+				// 	});
+				// } catch (error) {
+				// 	console.error('R2 upload error:', error);
+				// 	return messageResponse(
+				// 		`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				// 		MessageFlags.Ephemeral
+				// 	);
+				// }
 
 				// Submission flavor text
 				const pillowText = [
@@ -188,6 +192,7 @@ export default command({
 							},
 							{
 								type: ComponentType.Container,
+								accent_color: 0x9469c9,
 								components: [
 									{
 										type: ComponentType.TextDisplay,
@@ -250,7 +255,8 @@ export default command({
 			},
 			executeComponent: async (interaction, customId, env) => {
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
-				const [action, type, name, userName] = customId.split('-');
+				const [action, tYpe, name, userName] = customId.split('-');
+				const type = tYpe as PillowType;
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 				const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
 
@@ -265,13 +271,73 @@ export default command({
 				if (!interaction.message.interaction_metadata || !interaction.message.interaction_metadata.user)
 					return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
 
-				const pillowId = `${interaction.message.interaction_metadata?.user.id}_${type}`;
+				const userId = interaction.message.interaction_metadata.user.id;
+				const pillowId = `${userId}_${type}`;
 
-				const pillow = await env.FRY_PILLOW_SUBMISSIONS.get(pillowId);
-				if (!pillow) return messageResponse('Pillow not found', MessageFlags.Ephemeral);
+				const pillow = await fetch(interaction.message.attachments[0].url)
+					.then((res) => res.arrayBuffer())
+					.catch(() => {
+						console.error('Failed to fetch pillow image');
+						return null;
+					});
+				if (!pillow) return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
+
 				if (action === 'approve') {
+					const customMetadata: PillowData = {
+						approverId: interaction.member.user.id,
+						userId,
+						name,
+						type: type,
+						submittedAt: interaction.message.timestamp,
+						approvedAt: new Date().toISOString(),
+						userName,
+					};
+					try {
+						await env.FRY_PILLOW_SUBMISSIONS.put(pillowId, pillow, {
+							httpMetadata: {
+								contentType: 'image/png',
+							},
+							customMetadata,
+						});
+					} catch (error) {
+						console.error('R2 upload error:', error);
+						return messageResponse(
+							`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+							MessageFlags.Ephemeral
+						);
+					}
+					const components = interaction.message.components!.map((component) => {
+						if (component.type === ComponentType.Container) {
+							return component.components.map((subComponent) => {
+								if (subComponent.type === ComponentType.ActionRow) {
+									return {
+										type: ComponentType.TextDisplay,
+										content: `-# Submission approved by <@${interaction.member.user.id}> | <t:${getDate(
+											`${BigInt(interaction.id)}`
+										).getSeconds()}:f>`,
+									};
+								}
+								return subComponent;
+							});
+						}
+						return component;
+					});
+					try {
+						// Update the original message to show the approval
+					} catch (error) {
+						console.error('Error in approve flow:', error);
+						return messageResponse(
+							`An error occurred while approving: ${error instanceof Error ? error.message : String(error)}`,
+							MessageFlags.Ephemeral
+						);
+					}
+					return messageResponse(
+						`Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
+						MessageFlags.Ephemeral
+					);
 				}
-
+				if (action === 'deny') {
+				}
 				return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 			},
 		}),
