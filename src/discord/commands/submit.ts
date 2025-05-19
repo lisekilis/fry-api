@@ -309,21 +309,56 @@ export default command({
 					const components = interaction.message.components!.map((component) => {
 						if (component.type === ComponentType.Container) {
 							return component.components.map((subComponent) => {
-								if (subComponent.type === ComponentType.ActionRow) {
-									return {
-										type: ComponentType.TextDisplay,
-										content: `-# Submission approved by <@${interaction.member.user.id}> | <t:${getDate(
-											`${BigInt(interaction.id)}`
-										).getSeconds()}:f>`,
-									};
+								switch (subComponent.type) {
+									case ComponentType.MediaGallery:
+										return {
+											type: ComponentType.MediaGallery,
+											items: [
+												{
+													media: { url: `attachment://${userId}_${type}.png` },
+													description: name,
+												},
+											],
+										};
+									case ComponentType.ActionRow:
+										return {
+											type: ComponentType.TextDisplay,
+											content: `-# Submission approved by <@${interaction.member.user.id}> | <t:${getDate(
+												`${BigInt(interaction.id)}`
+											).getSeconds()}:f>`,
+										};
+									default:
+										return subComponent;
 								}
-								return subComponent;
 							});
 						}
 						return component;
 					});
 					try {
-						// Update the original message to show the approval
+						await fetch(`${RouteBases.api}${Routes.webhook(interaction.application_id, interaction.token)}`, {
+							method: 'PATCH',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify({
+								type: InteractionResponseType.UpdateMessage,
+								data: {
+									flags: MessageFlags.IsComponentsV2,
+									components,
+									attachments: [
+										{
+											id: '0',
+											filename: `${userId}_${type}.png`,
+										},
+									],
+								},
+							}),
+						})
+							.then((res) => res.json())
+							.catch(() => {
+								console.error('Failed to update message');
+								return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
+							});
 					} catch (error) {
 						console.error('Error in approve flow:', error);
 						return messageResponse(
@@ -337,6 +372,62 @@ export default command({
 					);
 				}
 				if (action === 'deny') {
+					const components = interaction.message.components!.map((component) => {
+						if (component.type === ComponentType.Container) {
+							return component.components.map((subComponent) => {
+								switch (subComponent.type) {
+									case ComponentType.MediaGallery:
+										return {
+											type: ComponentType.MediaGallery,
+											items: [
+												{
+													media: { url: `attachment://${userId}_${type}.png` },
+													description: name,
+													spoiler: true,
+												},
+											],
+										};
+									case ComponentType.TextDisplay:
+										return {
+											type: ComponentType.TextDisplay,
+											content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${getDate(
+												`${BigInt(interaction.id)}`
+											).getSeconds()}:f>`,
+										};
+									default:
+										return subComponent;
+								}
+							});
+						}
+						return component;
+					});
+					try {
+						await fetch(`${RouteBases.api}${Routes.webhook(interaction.application_id, interaction.token)}`, {
+							method: 'PATCH',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify({
+								type: InteractionResponseType.UpdateMessage,
+								data: {
+									flags: MessageFlags.IsComponentsV2,
+									components,
+								},
+							}),
+						})
+							.then((res) => res.json())
+							.catch(() => {
+								console.error('Failed to update message');
+								return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
+							});
+					} catch (error) {
+						console.error('Error in deny flow:', error);
+						return messageResponse(
+							`An error occurred while denying: ${error instanceof Error ? error.message : String(error)}`,
+							MessageFlags.Ephemeral
+						);
+					}
+					return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
 				}
 				return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 			},
