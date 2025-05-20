@@ -14,6 +14,8 @@ import { verifyWhitelist } from '../discord/util';
 
 // Discord webhook handler
 export async function handleDiscordInteractions(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+	const publicKey = env.DISCORD_PUBLIC_KEY.get();
+
 	// Verify the request is from Discord
 	const signature = request.headers.get('X-Signature-Ed25519');
 	const timestamp = request.headers.get('X-Signature-Timestamp');
@@ -26,7 +28,7 @@ export async function handleDiscordInteractions(request: Request, env: Env, ctx:
 	const rawBody = await request.clone().text();
 
 	// Verify the request signature
-	if (!(await verifyKey(rawBody, signature, timestamp, env.DISCORD_PUBLIC_KEY))) {
+	if (!(await verifyKey(rawBody, signature, timestamp, await publicKey))) {
 		return new Response('Bad request signature', { status: 401 });
 	}
 

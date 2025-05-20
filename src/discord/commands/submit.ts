@@ -293,7 +293,7 @@ export default command({
 						userName,
 					};
 					try {
-						await env.FRY_PILLOW_SUBMISSIONS.put(pillowId, pillow, {
+						await env.FRY_PILLOWS.put(pillowId, pillow, {
 							httpMetadata: {
 								contentType: 'image/png',
 							},

@@ -7,7 +7,7 @@ export enum PillowType {
 export type PillowData = {
 	approverId: string;
 	userId: string;
-	name: string; // Fixed from 'bame'
+	name: string;
 	type: PillowType;
 	/** ISO 8601 timestamp */
 	submittedAt: string;

@@ -28,11 +28,15 @@ export default command({
 				},
 			],
 			execute: async (interaction, env) => {
+				const fryOwnerIdPromise = env.FRY_OWNER_ID.get();
+
 				if (!interaction.data.options || interaction.data.options[0].type !== ApplicationCommandOptionType.Subcommand)
 					return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
+
+				const fryOwnerId = await fryOwnerIdPromise;
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
-				if (interaction.member.user.id !== env.FRY_OWNER_ID && !interaction.member.permissions.includes('Administrator'))
-					return messageResponse(`Only <@${env.FRY_OWNER_ID}> and Administrators can change the mod role`, MessageFlags.Ephemeral);
+				if (interaction.member.user.id !== fryOwnerId && !interaction.member.permissions.includes('Administrator'))
+					return messageResponse(`Only <@${fryOwnerId}> and Administrators can change the mod role`, MessageFlags.Ephemeral);
 				if (!interaction.data.options[0].options) {
 					const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 					const parsedSettings = settings ? JSON.parse(settings) : {};
@@ -72,11 +76,13 @@ export default command({
 						},
 					],
 					execute: async (interaction, env) => {
+						const fryOwnerId = env.FRY_OWNER_ID.get();
+
 						if (!isGuildInteraction(interaction))
 							return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
-						if (interaction.member.user.id !== env.FRY_OWNER_ID && !interaction.member.permissions.includes('Administrator'))
+						if (interaction.member.user.id !== (await fryOwnerId) && !interaction.member.permissions.includes('Administrator'))
 							return messageResponse(
-								`Only <@${env.FRY_OWNER_ID}> and Administrators can change the pillow channel`,
+								`Only <@${await fryOwnerId}> and Administrators can change the pillow channel`,
 								MessageFlags.Ephemeral
 							);
 						if (!interaction.data.options[0].options[0].options) {
@@ -108,10 +114,12 @@ export default command({
 						},
 					],
 					execute: async (interaction, env) => {
+						const fryOwnerId = env.FRY_OWNER_ID.get();
+
 						if (!isGuildInteraction(interaction))
 							return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
-						if (interaction.member.user.id !== env.FRY_OWNER_ID && !interaction.member.permissions.includes('Administrator'))
-							return messageResponse(`Only <@${env.FRY_OWNER_ID}> and Administrators can change the photo channel`, MessageFlags.Ephemeral);
+						if (interaction.member.user.id !== (await fryOwnerId) && !interaction.member.permissions.includes('Administrator'))
+							return messageResponse(`Only <@${await fryOwnerId}> and Administrators can change the photo channel`, MessageFlags.Ephemeral);
 						if (!interaction.data.options[0].options[0].options) {
 							const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 							const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
@@ -159,11 +167,13 @@ export default command({
 						},
 					],
 					execute: async (interaction, env, ctx) => {
+						const fryOwnerId = env.FRY_OWNER_ID.get();
+
 						if (
-							(isGuildInteraction(interaction) && interaction.member.user.id !== env.FRY_OWNER_ID) ||
-							(isDMInteraction(interaction) && interaction.user.id !== env.FRY_OWNER_ID)
+							(isGuildInteraction(interaction) && interaction.member.user.id !== (await fryOwnerId)) ||
+							(isDMInteraction(interaction) && interaction.user.id !== (await fryOwnerId))
 						)
-							return messageResponse(`Only <@${env.FRY_OWNER_ID}> can change the global settings`, MessageFlags.Ephemeral);
+							return messageResponse(`Only <@${await fryOwnerId}> can change the global settings`, MessageFlags.Ephemeral);
 						if (!interaction.data.options[0].options[0].options) {
 							const settings = await env.FRY_SETTINGS.list();
 							if (settings.keys.length > 0) {
