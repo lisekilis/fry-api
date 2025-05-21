@@ -58,6 +58,7 @@
 		}
 	],
 	"vars": {
-		"PILLOW_URL": "https://pillows.fry.api.lisekilis.dev"
+		"PILLOW_URL": "https://pillows.fry.api.lisekilis.dev",
+		"PHOTO_URL": "https://photos.fry.api.lisekilis.dev"
 	}
 }

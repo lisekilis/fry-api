@@ -123,7 +123,7 @@ export default command({
 				} else if (userId) {
 					// Case 2: View all pillows for a user (type was not provided, id was not directly provided)
 					// Efficiently list pillows for the user using a prefix if keys are `${userId}_${type}`
-					const listResult = await env.FRY_PILLOWS.list({ prefix: `${userId}_` });
+					const listResult = await env.FRY_PILLOWS.list({ prefix: `${userId}_`, include: ['customMetadata'] });
 
 					const userPillows = listResult.objects
 						.filter((obj) => obj.customMetadata) // Ensure customMetadata exists

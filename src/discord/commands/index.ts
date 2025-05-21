@@ -1,9 +1,10 @@
+// Discord command handler and utilities
 import {
 	APIApplicationCommandInteraction,
 	APIApplicationCommandSubcommandGroupOption,
 	APIApplicationCommandSubcommandOption,
 	APIChatInputApplicationCommandInteraction,
-	APIInteraction, // Added import
+	APIInteraction,
 	ApplicationCommandOptionType,
 	InteractionType,
 	MessageFlags,
@@ -23,41 +24,54 @@ import {
 	GroupSubcommand,
 } from '../types';
 
+/**
+ * Main Discord command dispatcher.
+ */
 export default async function (interaction: APIInteraction, env: Env, ctx: ExecutionContext): Promise<Response> {
 	switch (interaction.type) {
 		case InteractionType.ApplicationCommand:
 			try {
 				const commandName = interaction.data.name;
-				const modulePath = `./${commandName}.ts`; // Construct the file path dynamically
-				const commandModule = (await import(modulePath)) as ChatInputCommand; // Dynamically import the module
-				if (isChatInputApplicationCommandInteraction(interaction)) return await commandModule.execute(interaction, env, ctx);
-			} catch (error) {
+				const modulePath = `./${commandName}.ts`;
+				const commandModule = (await import(modulePath)) as ChatInputCommand;
+				if (isChatInputApplicationCommandInteraction(interaction)) {
+					return await commandModule.execute(interaction, env, ctx);
+				}
+			} catch {
 				return messageResponse('An error occurred while processing the command', MessageFlags.Ephemeral);
 			}
 			break;
 		case InteractionType.MessageComponent:
-			if (!isMessageComponentButtonInteraction(interaction)) return messageResponse('Invalid interaction type', MessageFlags.Ephemeral);
+			if (!isMessageComponentButtonInteraction(interaction)) {
+				return messageResponse('Invalid interaction type', MessageFlags.Ephemeral);
+			}
 			try {
 				const match = /^(?<command>\w+)((\.(?<subcommandGroup>\w+))?(\.(?<subcommand>\w+)))?(-(?<customId>.*))/.exec(
 					interaction.data.custom_id
 				);
-				if (!match || !match.groups || !match.groups.command || !match.groups.customId)
+				if (!match?.groups?.command || !match.groups.customId) {
 					return messageResponse('Invalid custom ID', MessageFlags.Ephemeral);
+				}
 				const command = match.groups.command;
-				const modulePath = `./${command}.ts`; // Construct the file path dynamically
-				const commandModule = (await import(modulePath)) as ChatInputCommand; // Dynamically import the module
-				if (commandModule.executeComponent) return await commandModule.executeComponent(interaction, match.groups.customId, env, ctx);
+				const modulePath = `./${command}.ts`;
+				const commandModule = (await import(modulePath)) as ChatInputCommand;
+				if (commandModule.executeComponent) {
+					return await commandModule.executeComponent(interaction, match.groups.customId, env, ctx);
+				}
 				return messageResponse('Component not found', MessageFlags.Ephemeral);
-			} catch (error) {
+			} catch {
 				return messageResponse('An error occurred while processing the component', MessageFlags.Ephemeral);
 			}
-			break;
 	}
 	return messageResponse('Command not found', MessageFlags.Ephemeral);
 }
 
+/**
+ * Factory for building a ChatInputCommand or ChatInputCommandGroup.
+ */
 export function command(command: ChatInputCommandParameters): ChatInputCommand {
 	if ('execute' in command) return command;
+
 	const subcommandOptions =
 		(command.subcommands?.map((subcommand) => ({
 			name: subcommand.name,
@@ -65,6 +79,7 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 			type: ApplicationCommandOptionType.Subcommand,
 			options: subcommand.options,
 		})) as APIApplicationCommandSubcommandOption[]) ?? undefined;
+
 	const subcommandGroupOptions =
 		(command.subcommandGroups?.map((subcommandGroup) => ({
 			name: subcommandGroup.name,
@@ -72,11 +87,12 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 			type: ApplicationCommandOptionType.SubcommandGroup,
 			options: subcommandGroup.options,
 		})) as APIApplicationCommandSubcommandGroupOption[]) ?? undefined;
+
 	if (command.subcommands && command.subcommandGroups) {
 		return {
 			...command,
 			options: [...subcommandOptions, ...subcommandGroupOptions],
-			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
+			execute: (interaction, env, ctx) => {
 				if (isSubcommandInteraction(interaction) && command.subcommands) {
 					if (!interaction.data.options) return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 					const subcommandInteraction = interaction as APIChatInputApplicationSubcommandInteraction;
@@ -105,29 +121,22 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 				if (!subcommandName) return messageResponse('Component not found', MessageFlags.Ephemeral);
 				if (subcommandGroupName && command.subcommandGroups) {
 					const subcommand = findSubcommand(subcommandGroupName, subcommandName, command.subcommandGroups);
-					if (subcommand) {
-						if (subcommand.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
-
-						return messageResponse('Component not found', MessageFlags.Ephemeral);
-					}
-					return messageResponse('Subcommand group not found', MessageFlags.Ephemeral);
+					if (subcommand?.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
+					return messageResponse('Component not found', MessageFlags.Ephemeral);
 				}
 				if (!command.subcommands) return messageResponse('Component not found', MessageFlags.Ephemeral);
 				const subcommand = findSubcommand(subcommandName, command.subcommands);
-				if (subcommand) {
-					if (subcommand.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
-
-					return messageResponse('Component not found', MessageFlags.Ephemeral);
-				}
-				return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
+				if (subcommand?.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
+				return messageResponse('Component not found', MessageFlags.Ephemeral);
 			},
 		} as ChatInputCommandGroup;
 	}
+
 	if (command.subcommands) {
 		return {
 			...command,
 			options: subcommandOptions,
-			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
+			execute: (interaction, env, ctx) => {
 				if (isSubcommandInteraction(interaction) && command.subcommands) {
 					if (!interaction.data.options) return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
 					const subcommandInteraction = interaction as APIChatInputApplicationSubcommandInteraction;
@@ -142,23 +151,19 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 				if (!match) return messageResponse('Invalid custom ID', MessageFlags.Ephemeral);
 				const subcommandName = match.groups?.subcommand;
 				if (!subcommandName) return messageResponse('Component not found', MessageFlags.Ephemeral);
-
 				if (!command.subcommands) return messageResponse('Component not found', MessageFlags.Ephemeral);
 				const subcommand = findSubcommand(subcommandName, command.subcommands);
-				if (subcommand) {
-					if (subcommand.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
-
-					return messageResponse('Component not found', MessageFlags.Ephemeral);
-				}
-				return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
+				if (subcommand?.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
+				return messageResponse('Component not found', MessageFlags.Ephemeral);
 			},
 		} as ChatInputCommandGroup;
 	}
+
 	if (command.subcommandGroups) {
 		return {
 			...command,
 			options: subcommandGroupOptions,
-			execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => {
+			execute: (interaction, env, ctx) => {
 				if (isGroupSubcommandInteraction(interaction) && command.subcommandGroups) {
 					if (!interaction.data.options || !('options' in interaction.data.options[0]) || !interaction.data.options[0].options) {
 						return messageResponse('Subcommand not found', MessageFlags.Ephemeral);
@@ -182,16 +187,13 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 				if (!subcommandName) return messageResponse('Component not found', MessageFlags.Ephemeral);
 				if (subcommandGroupName && command.subcommandGroups) {
 					const subcommand = findSubcommand(subcommandGroupName, subcommandName, command.subcommandGroups);
-					if (subcommand) {
-						if (subcommand.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
-
-						return messageResponse('Component not found', MessageFlags.Ephemeral);
-					}
-					return messageResponse('Subcommand group not found', MessageFlags.Ephemeral);
+					if (subcommand?.executeComponent) return subcommand.executeComponent(interaction, customId, env, ctx);
+					return messageResponse('Component not found', MessageFlags.Ephemeral);
 				}
 			},
 		} as ChatInputCommandGroup;
 	}
+
 	throw new Error('Command must have either subcommand or subcommand group options');
 }
 
@@ -210,6 +212,7 @@ export function subcommandGroup(command: SubcommandGroupParameters): SubcommandG
 export function subcommand(command: Subcommand): Subcommand {
 	return command;
 }
+
 export function groupSubcommand(command: GroupSubcommand): GroupSubcommand {
 	return command;
 }

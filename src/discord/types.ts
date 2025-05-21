@@ -6,6 +6,7 @@ import {
 	APIApplicationCommandSubcommandOption,
 	APIChatInputApplicationCommandInteraction,
 	APIChatInputApplicationCommandInteractionData,
+	APIInteractionResponse,
 	APIMessageComponentInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
