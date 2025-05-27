@@ -51,16 +51,13 @@ export default command({
 
 				try {
 					const components = await listComponents(env.FRY_PILLOWS, page, pageSize, env.PILLOW_URL, 'pillows');
-					return new Response(
-						JSON.stringify({
-							type: InteractionResponseType.ChannelMessageWithSource,
-							data: {
-								flags: MessageFlags.IsComponentsV2,
-								components,
-							},
-						}),
-						{ headers: { 'Content-Type': 'application/json' } }
-					);
+					return {
+						type: InteractionResponseType.ChannelMessageWithSource,
+						data: {
+							flags: MessageFlags.IsComponentsV2,
+							components,
+						},
+					};
 				} catch (error) {
 					const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
 					return messageResponse(errorMessage, MessageFlags.Ephemeral);

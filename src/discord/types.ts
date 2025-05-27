@@ -24,8 +24,17 @@ type BasicCommandData = {
 type BasicCommand = BasicCommandData & {
 	type: ApplicationCommandType.ChatInput;
 	options?: APIApplicationCommandBasicOption[];
-	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
-	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	execute: (
+		interaction: APIChatInputApplicationCommandInteraction,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
+	executeComponent?: (
+		interaction: APIMessageComponentInteraction,
+		customId: string,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
 };
 
 export type ChatInputCommandGroup = BasicCommandData & {
@@ -33,8 +42,17 @@ export type ChatInputCommandGroup = BasicCommandData & {
 	options: APIApplicationCommandOption[];
 	subcommandGroups?: SubcommandGroup[];
 	subcommands?: Subcommand[];
-	execute: (interaction: APIChatInputApplicationCommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
-	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	execute: (
+		interaction: APIChatInputApplicationCommandInteraction,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
+	executeComponent?: (
+		interaction: APIMessageComponentInteraction,
+		customId: string,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
 };
 
 export type SubcommandGroup = BasicCommandData & {
@@ -48,15 +66,33 @@ export type SubcommandGroupParameters = Omit<SubcommandGroup, 'options'>;
 export type Subcommand = BasicCommandData & {
 	type: ApplicationCommandOptionType.Subcommand;
 	options?: APIApplicationCommandBasicOption[];
-	execute: (interaction: APIChatInputApplicationSubcommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
-	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	execute: (
+		interaction: APIChatInputApplicationSubcommandInteraction,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
+	executeComponent?: (
+		interaction: APIMessageComponentInteraction,
+		customId: string,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
 };
 
 export type GroupSubcommand = BasicCommandData & {
 	type: ApplicationCommandOptionType.Subcommand;
 	options?: APIApplicationCommandBasicOption[];
-	execute: (interaction: APIChatInputApplicationGroupSubcommandInteraction, env: Env, ctx: ExecutionContext) => Promise<Response>;
-	executeComponent?: (interaction: APIMessageComponentInteraction, customId: string, env: Env, ctx: ExecutionContext) => Promise<Response>;
+	execute: (
+		interaction: APIChatInputApplicationGroupSubcommandInteraction,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
+	executeComponent?: (
+		interaction: APIMessageComponentInteraction,
+		customId: string,
+		env: Env,
+		ctx: ExecutionContext
+	) => Promise<APIInteractionResponse | Response>;
 };
 
 interface APIChatInputApplicationSubcommandInteractionData extends Omit<APIChatInputApplicationCommandInteractionData, 'options'> {
