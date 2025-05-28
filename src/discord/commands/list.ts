@@ -1,7 +1,4 @@
 import {
-	APIInteractionResponse,
-	APIInteractionResponseCallbackData,
-	APIInteractionResponseChannelMessageWithSource,
 	APIMessageComponentInteraction,
 	APIMessageTopLevelComponent,
 	ApplicationCommandOptionType,
@@ -13,7 +10,6 @@ import {
 } from 'discord-api-types/v10';
 import { command, subcommand } from '.';
 import { messageResponse } from '../responses';
-import { PillowData } from '../../types';
 
 export default command({
 	name: 'list',
@@ -63,6 +59,9 @@ export default command({
 					return messageResponse(errorMessage, MessageFlags.Ephemeral);
 				}
 			},
+			executeComponent: async (interaction, customId, env) => {
+				return await executePaginationComponent(interaction, customId, env);
+			},
 		}),
 	],
 });
@@ -72,9 +71,10 @@ const listComponents = async (
 	page: number,
 	pageSize: number,
 	previewUrl: string,
-	name: string
+	name: string,
+	objectCount?: number
 ): Promise<APIMessageTopLevelComponent[]> => {
-	const objectCount = (await bucket.list()).objects.length;
+	objectCount = objectCount ?? (await bucket.list()).objects.length;
 	if (objectCount === 0) throw new Error(`No ${name} found! <a:totsLoading:895203708583944192>`);
 	if (page * pageSize > objectCount) throw new Error('Page out of range');
 
@@ -146,7 +146,7 @@ const executePaginationComponent = async (interaction: APIMessageComponentIntera
 	const pageNum = parseInt(page, 10);
 	const pageSizeNum = parseInt(pageSize, 10);
 	const objectCountNum = parseInt(objectCount, 10);
-	const components = await listComponents(env.FRY_PILLOWS, pageNum, pageSizeNum, env.PILLOW_URL, name);
+	const components = await listComponents(env.FRY_PILLOWS, pageNum, pageSizeNum, env.PILLOW_URL, name, objectCountNum);
 	return new Response(
 		JSON.stringify({
 			type: InteractionResponseType.UpdateMessage,
