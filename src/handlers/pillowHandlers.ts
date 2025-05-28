@@ -6,7 +6,7 @@ export async function handleListPillows(env: Env): Promise<Response> {
 	const files =
 		list.objects?.map((obj) => ({
 			key: obj.key,
-			pillowType: obj.customMetadata?.pillowType || PillowType.NORMAL,
+			pillowType: obj.customMetadata?.pillowType || PillowType.REGULAR,
 			pillowName: obj.customMetadata?.pillowName || '',
 			submittedAt: obj.customMetadata?.submittedAt || new Date(),
 			discordApproverId: obj.customMetadata?.discordApproverId || '',

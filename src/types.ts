@@ -1,9 +1,8 @@
 export enum PillowType {
-	NORMAL = 'Normal',
+	REGULAR = 'Regular',
 	BODY = 'Dakimakura',
 }
 
-// Fix typo: 'bame' -> 'name'
 export type PillowData = {
 	approverId: string;
 	userId: string;

@@ -48,7 +48,7 @@ export default command({
 					choices: [
 						{
 							name: 'Standard',
-							value: PillowType.NORMAL,
+							value: PillowType.REGULAR,
 						},
 						{
 							name: 'Dakimakura',
@@ -221,13 +221,13 @@ export default command({
 												type: ComponentType.Button,
 												style: ButtonStyle.Primary,
 												label: 'Approve',
-												custom_id: `submit.pillow-approve-${type}-${name}-${userName}`,
+												custom_id: `submit.pillow-approve-${userName}`,
 											},
 											{
 												type: ComponentType.Button,
 												style: ButtonStyle.Danger,
 												label: 'Deny',
-												custom_id: `submit.pillow-deny-${type}-${name}-${userName}`,
+												custom_id: `submit.pillow-deny-${userName}`,
 											},
 										],
 									},
@@ -255,8 +255,17 @@ export default command({
 			},
 			executeComponent: async (interaction, customId, env) => {
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
-				const [action, tYpe, name, userName] = customId.split('-');
-				const type = tYpe as PillowType;
+				const parts = customId.split('-');
+				const action = parts[1];
+				const userName = parts.slice(2).join('-');
+				const item = interaction.message.components
+					?.find((component) => component.type === ComponentType.Container)
+					?.components.find((component) => component.type === ComponentType.MediaGallery)?.items[0];
+				if (!item || !item.media || !item.media.url || !item.description) {
+					return messageResponse('No image found in the submission', MessageFlags.Ephemeral);
+				}
+				const name = item.description as string;
+				const type = item.media.url.split('/').pop()?.split('_')[1] as PillowType;
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 				const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
 

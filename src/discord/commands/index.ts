@@ -123,7 +123,12 @@ export function command(command: ChatInputCommandParameters): ChatInputCommand {
 			name: subcommandGroup.name,
 			description: subcommandGroup.description,
 			type: ApplicationCommandOptionType.SubcommandGroup,
-			options: subcommandGroup.options,
+			options: subcommandGroup.subcommands.map((subcommand) => ({
+				name: subcommand.name,
+				description: subcommand.description,
+				type: ApplicationCommandOptionType.Subcommand,
+				options: subcommand.options,
+			})),
 		})
 	);
 

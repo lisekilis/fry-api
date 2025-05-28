@@ -32,8 +32,8 @@ export default command({
 					type: ApplicationCommandOptionType.String,
 					choices: [
 						{
-							name: PillowType.NORMAL,
-							value: PillowType.NORMAL,
+							name: PillowType.REGULAR,
+							value: PillowType.REGULAR,
 						},
 						{
 							name: PillowType.BODY,
