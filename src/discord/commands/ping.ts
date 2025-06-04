@@ -12,6 +12,6 @@ export default command({
 		const endTime = Date.now();
 		const ping = endTime - startTime;
 
-		return messageResponse(`Pong! Latency: ${ping}ms`);
+		return messageResponse(`🏓Pong!\n-# Latency: ${ping}ms`);
 	},
 });
