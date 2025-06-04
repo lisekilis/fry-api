@@ -178,9 +178,8 @@ export async function verifyAdmin(interaction: APIInteraction, env: Env): Promis
 	if (whitelistCheck) return whitelistCheck;
 
 	if (isGuildInteraction(interaction)) {
-		const settings = JSON.parse((await env.FRY_SETTINGS.get(interaction.guild_id)) ?? '');
-		if (!settings || !settings.admins || !settings.admins.includes(interaction.member.user.id)) {
-			return messageResponse('Only Administrators are permitted to use this command.', MessageFlags.Ephemeral);
+		if (!interaction.member.permissions.includes('Administrator')) {
+			return messageResponse('Only Administrators are permitted to use this command', MessageFlags.Ephemeral);
 		}
 		return false;
 	}
