@@ -55,9 +55,14 @@ export default async function (interaction: APIInteraction, env: Env, ctx: Execu
 				);
 				if (!match?.groups?.command || !match.groups.customId) throw new Error('Invalid custom ID');
 				commandName = match.groups.command;
-				modulePath = `./${command}.ts`;
-				commandModule = await import(modulePath);
-				if (commandModule.executeComponent) throw new Error('Component not found');
+				try {
+					modulePath = `./${commandName}.ts`;
+					commandModule = await import(modulePath);
+				} catch {
+					modulePath = `./${commandName}.js`;
+					commandModule = await import(modulePath);
+				}
+				if (!commandModule.executeComponent) throw new Error('Component handler `executeComponent` not found in module');
 				return await executeComponentModule(commandModule as ChatInputCommand, interaction, match.groups.customId, env, ctx);
 			default:
 				throw new Error('Invalid interaction type');

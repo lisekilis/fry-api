@@ -10,6 +10,7 @@
 	"observability": {
 		"enabled": true
 	},
+	"find_additional_modules": true,
 	"r2_buckets": [
 		{
 			"binding": "FRY_PILLOWS",
