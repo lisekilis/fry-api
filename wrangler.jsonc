@@ -11,6 +11,7 @@
 		"enabled": true
 	},
 	"find_additional_modules": true,
+	"preserve_file_names": true,
 	"r2_buckets": [
 		{
 			"binding": "FRY_PILLOWS",

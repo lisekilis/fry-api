@@ -28,7 +28,7 @@ import {
  */
 export default async function (interaction: APIInteraction, env: Env, ctx: ExecutionContext): Promise<Response> {
 	try {
-		let commandName: string, modulePath: string, commandModule;
+		let commandName: string, commandModule;
 		switch (interaction.type) {
 			case InteractionType.Ping:
 				return new Response(
@@ -39,13 +39,7 @@ export default async function (interaction: APIInteraction, env: Env, ctx: Execu
 				);
 			case InteractionType.ApplicationCommand:
 				commandName = interaction.data.name;
-				try {
-					modulePath = `./${commandName}.ts`;
-					commandModule = await import(modulePath);
-				} catch {
-					modulePath = `./${commandName}.js`;
-					commandModule = await import(modulePath);
-				}
+				commandModule = await importCommandModule(commandName);
 				if (!commandModule.execute) throw new Error('Command not found');
 				return await executeCommandModule(commandModule as ChatInputCommand, interaction, env, ctx);
 
@@ -55,13 +49,7 @@ export default async function (interaction: APIInteraction, env: Env, ctx: Execu
 				);
 				if (!match?.groups?.command || !match.groups.customId) throw new Error('Invalid custom ID');
 				commandName = match.groups.command;
-				try {
-					modulePath = `./${commandName}.ts`;
-					commandModule = await import(modulePath);
-				} catch {
-					modulePath = `./${commandName}.js`;
-					commandModule = await import(modulePath);
-				}
+				commandModule = await importCommandModule(commandName);
 				if (!commandModule.executeComponent) throw new Error('Component handler `executeComponent` not found in module');
 				return await executeComponentModule(commandModule as ChatInputCommand, interaction, match.groups.customId, env, ctx);
 			default:
@@ -212,6 +200,28 @@ export function subcommand(command: Subcommand): Subcommand {
 
 export function groupSubcommand(command: GroupSubcommand): GroupSubcommand {
 	return command;
+}
+
+/**
+ * Helper function to import a command module, trying .ts first, then .js.
+ */
+async function importCommandModule(commandName: string): Promise<any> {
+	let modulePath: string;
+	try {
+		// look for a file ending with commandName.ts or commandName.js
+		// this allows for both TypeScript and JavaScript command files
+		// and allows for easier development without needing to compile TypeScript
+
+		return await import(`./*${commandName}.ts`);
+	} catch (tsError) {
+		try {
+			return await import(`./*${commandName}.js`);
+		} catch (jsError) {
+			console.error(`Failed to import command module ${commandName}.ts:`, tsError);
+			console.error(`Failed to import command module ${commandName}.js:`, jsError);
+			throw new Error(`Command module ${commandName} not found.`);
+		}
+	}
 }
 
 async function executeCommandModule(
