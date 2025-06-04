@@ -6,8 +6,9 @@ export default async function (request: Request, env: Env, ctx: ExecutionContext
 	const publicKey = env.DISCORD_PUBLIC_KEY.get();
 	const signature = request.headers.get('X-Signature-Ed25519');
 	const timestamp = request.headers.get('X-Signature-Timestamp');
+
 	const body = await request.text();
-	if (!signature || !timestamp || !verifyKey(body, signature, timestamp, await publicKey))
+	if (!signature || !timestamp || !(await verifyKey(body, signature, timestamp, await publicKey)))
 		return new Response('Unauthorized', { status: 401 });
 
 	const interaction = JSON.parse(body) as APIInteraction;
