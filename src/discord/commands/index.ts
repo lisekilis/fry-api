@@ -22,6 +22,7 @@ import {
 	SubcommandGroupParameters,
 	GroupSubcommand,
 } from '../types';
+import { json } from 'stream/consumers';
 
 /**
  * Main Discord command dispatcher.
@@ -40,7 +41,10 @@ export default async function (interaction: APIInteraction, env: Env, ctx: Execu
 			case InteractionType.ApplicationCommand:
 				commandName = interaction.data.name;
 				commandModule = await importCommandModule(commandName);
-				if (!commandModule.execute) throw new Error('Command not found');
+				if (!commandModule.execute) {
+					console.error('Found module without execute function:', JSON.stringify(commandModule));
+					throw new Error('Command not found');
+				}
 				return await executeCommandModule(commandModule as ChatInputCommand, interaction, env, ctx);
 
 			case InteractionType.MessageComponent:
