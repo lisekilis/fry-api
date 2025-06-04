@@ -15,7 +15,7 @@ async function validateToken(request: Request, env: Env): Promise<boolean> {
 	}
 
 	const token = authHeader.replace('Bearer ', '');
-	return token === env.API_TOKEN;
+	return token === (await env.API_TOKEN.get());
 }
 
 export default {

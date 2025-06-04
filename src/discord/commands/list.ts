@@ -29,7 +29,7 @@ export default command({
 					min_value: 1,
 				},
 				{
-					name: 'pageSize',
+					name: 'pagesize',
 					type: ApplicationCommandOptionType.Integer,
 					description: 'Number of pillows to list per page (default: 10)',
 					min_value: 5,
@@ -47,6 +47,53 @@ export default command({
 
 				try {
 					const components = await listComponents(env.FRY_PILLOWS, page, pageSize, env.PILLOW_URL, 'pillows');
+					return {
+						type: InteractionResponseType.ChannelMessageWithSource,
+						data: {
+							flags: MessageFlags.IsComponentsV2,
+							components,
+						},
+					};
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+					return messageResponse(errorMessage, MessageFlags.Ephemeral);
+				}
+			},
+			executeComponent: async (interaction, customId, env) => {
+				return await executePaginationComponent(interaction, customId, env);
+			},
+		}),
+		subcommand({
+			name: 'photos',
+			description: 'list stored photos',
+			type: ApplicationCommandOptionType.Subcommand,
+			options: [
+				{
+					name: 'page',
+					type: ApplicationCommandOptionType.Integer,
+					description: 'Page number to list',
+					required: false,
+					min_value: 1,
+				},
+				{
+					name: 'pagesize',
+					type: ApplicationCommandOptionType.Integer,
+					description: 'Number of photos to list per page (default: 10)',
+					min_value: 5,
+					max_value: 50,
+				},
+			],
+			execute: async (interaction, env) => {
+				const page = Math.max(
+					0,
+					((interaction.data.options[0].options?.find((option) => option.name === 'page')?.value as number | undefined) ?? 0) - 1
+				); // Converter to 0-based index
+
+				const pageSize =
+					(interaction.data.options[0].options?.find((option) => option.name === 'pageSize')?.value as number | undefined) ?? 10;
+
+				try {
+					const components = await listComponents(env.FRY_PHOTOS, page, pageSize, env.PHOTO_URL, 'photos');
 					return {
 						type: InteractionResponseType.ChannelMessageWithSource,
 						data: {

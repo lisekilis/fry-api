@@ -1,5 +1,6 @@
 // Discord command handler and utilities
 import {
+	APIApplicationCommand,
 	APIApplicationCommandInteraction,
 	APIApplicationCommandSubcommandGroupOption,
 	APIApplicationCommandSubcommandOption,
@@ -10,6 +11,7 @@ import {
 	InteractionResponseType,
 	InteractionType,
 	MessageFlags,
+	RESTPostAPIApplicationCommandsJSONBody,
 } from 'discord-api-types/v10';
 import { messageResponse } from '../responses';
 import { isChatInputApplicationCommandInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
