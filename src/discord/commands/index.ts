@@ -39,8 +39,13 @@ export default async function (interaction: APIInteraction, env: Env, ctx: Execu
 				);
 			case InteractionType.ApplicationCommand:
 				commandName = interaction.data.name;
-				modulePath = `./${commandName}.ts`;
-				commandModule = await import(modulePath);
+				try {
+					modulePath = `./${commandName}.ts`;
+					commandModule = await import(modulePath);
+				} catch {
+					modulePath = `./${commandName}.js`;
+					commandModule = await import(modulePath);
+				}
 				if (!commandModule.execute) throw new Error('Command not found');
 				return await executeCommandModule(commandModule as ChatInputCommand, interaction, env, ctx);
 
