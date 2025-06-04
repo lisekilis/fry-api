@@ -216,10 +216,10 @@ async function importCommandModule(commandName: string): Promise<any> {
 		// this allows for both TypeScript and JavaScript command files
 		// and allows for easier development without needing to compile TypeScript
 
-		return await import(`./${commandName}.ts`);
+		return (await import(`./${commandName}.ts`)).default;
 	} catch (tsError) {
 		try {
-			return await import(`./${commandName}.js`);
+			return (await import(`./${commandName}.js`)).default;
 		} catch (jsError) {
 			console.error(`Failed to import command module ${commandName}.ts:`, tsError);
 			console.error(`Failed to import command module ${commandName}.js:`, jsError);
