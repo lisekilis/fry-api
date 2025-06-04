@@ -1,21 +1,17 @@
 // Discord command handler and utilities
 import {
-	APIApplicationCommand,
 	APIApplicationCommandInteraction,
 	APIApplicationCommandSubcommandGroupOption,
 	APIApplicationCommandSubcommandOption,
-	APIChatInputApplicationCommandInteraction,
 	APIInteraction,
 	APIMessageComponentInteraction,
 	ApplicationCommandOptionType,
 	InteractionResponseType,
 	InteractionType,
 	MessageFlags,
-	RESTPostAPIApplicationCommandsJSONBody,
 } from 'discord-api-types/v10';
 import { messageResponse } from '../responses';
-import { isChatInputApplicationCommandInteraction, isMessageComponentButtonInteraction } from 'discord-api-types/utils';
-import { isGroupSubcommandInteraction, isSubcommandInteraction } from '../util';
+import { isChatInputApplicationCommandInteraction } from 'discord-api-types/utils';
 import {
 	ChatInputCommand,
 	ChatInputCommandParameters,
@@ -24,7 +20,6 @@ import {
 	SubcommandGroup,
 	Subcommand,
 	SubcommandGroupParameters,
-	ChatInputCommandGroup,
 	GroupSubcommand,
 } from '../types';
 
