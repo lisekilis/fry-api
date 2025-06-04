@@ -1,12 +1,5 @@
-import {
-	handleListPillows,
-	handleGetPillow,
-	handleGetImage,
-	handleListImages,
-	handleDiscordInteractions,
-	handleHeadImage,
-	handleHeadPillow,
-} from './handlers/index';
+import discord from './discord';
+import { handleListPillows, handleGetPillow, handleGetImage, handleListImages, handleHeadImage, handleHeadPillow } from './handlers/index';
 
 async function validateToken(request: Request, env: Env): Promise<boolean> {
 	const authHeader = request.headers.get('Authorization');
@@ -15,17 +8,16 @@ async function validateToken(request: Request, env: Env): Promise<boolean> {
 	}
 
 	const token = authHeader.replace('Bearer ', '');
-	return token === env.API_TOKEN;
+	return token === (await env.API_TOKEN.get());
 }
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		console.log(`DISCORD_APP_ID:`, env.DISCORD_APP_ID);
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const method = request.method;
 		const pathParts = path.split('/').filter(Boolean);
-		if (method === 'POST' && pathParts[0] === 'interactions') return await handleDiscordInteractions(request, env, ctx);
+		if (method === 'POST' && pathParts[0] === 'interactions') return await discord(request, env, ctx);
 		if (!validateToken(request, env)) {
 			return new Response('Unauthorized', { status: 401 });
 		}

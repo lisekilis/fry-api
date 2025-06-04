@@ -1,36 +1,29 @@
 import {
 	APIActionRowComponent,
+	APIComponentInMessageActionRow,
 	APIEmbed,
 	APIInteractionResponseCallbackData,
 	APIInteractionResponseChannelMessageWithSource,
-	APIMessageActionRowComponent,
 	InteractionResponseType,
 	MessageFlags,
 } from 'discord-api-types/v10';
 
-export function messageResponse(content: string, flags?: MessageFlags): Response {
-	const response = {
+export function messageResponse(content: string, flags?: MessageFlags): APIInteractionResponseChannelMessageWithSource {
+	return {
 		type: InteractionResponseType.ChannelMessageWithSource,
 		data: {
-			tts: false,
 			content,
-			embeds: [],
 			allowed_mentions: { parse: [] },
 			flags,
 		},
 	};
-
-	return new Response(JSON.stringify(response), {
-		status: 200,
-		headers: { 'Content-Type': 'application/json' },
-	});
 }
 
 export function embedResponse(
 	embed: APIEmbed,
 	content?: string,
 	flags?: MessageFlags,
-	components?: APIActionRowComponent<APIMessageActionRowComponent>[],
+	components?: APIActionRowComponent<APIComponentInMessageActionRow>[],
 	attachment?: { data: ArrayBuffer; filename: string; contentType: string }
 ): Response {
 	const response: APIInteractionResponseChannelMessageWithSource = {

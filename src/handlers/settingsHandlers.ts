@@ -1,3 +1,5 @@
+import { Settings } from '../types';
+
 export async function handleGetSettings(env: Env, id: string): Promise<Response> {
 	const settings = await env.FRY_SETTINGS.get(id);
 	if (!settings) {
@@ -10,7 +12,7 @@ export async function handleGetSettings(env: Env, id: string): Promise<Response>
 	});
 }
 
-export async function patchSettings(guildId: string, settings: any, env: Env): Promise<void> {
+export async function patchSettings(guildId: string, settings: Partial<Settings>, env: Env): Promise<void> {
 	const currentSettings = await env.FRY_SETTINGS.get(guildId);
 	const parsedSettings = currentSettings ? JSON.parse(currentSettings) : {};
 
