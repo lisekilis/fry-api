@@ -64,6 +64,8 @@ export default command({
 				},
 			],
 			execute: async (interaction, env) => {
+				console.log('submit.pillow interaction:', interaction);
+
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
@@ -87,6 +89,8 @@ export default command({
 					await env.FRY_COOLDOWN.put(interaction.member.user.id, 'true', { expirationTtl: parsedSettings.cooldown * 1000 });
 				}
 
+				console.log('checks passed, proceeding with submission');
+
 				const subcommand = interaction.data.options[0];
 				const nameOption = subcommand.options?.find((option) => option.name === 'name');
 				const typeOption = subcommand.options?.find((option) => option.name === 'type');
@@ -103,6 +107,8 @@ export default command({
 				const attachment = interaction.data.resolved?.attachments?.[textureOption.value as string];
 				if (!attachment) return messageResponse('Texture attachment not found', MessageFlags.Ephemeral);
 				if (!attachment.content_type?.includes('png')) return messageResponse('Texture must be a PNG image', MessageFlags.Ephemeral);
+
+				console.log('Starging attachment download for:', attachment.url);
 
 				const attachmentResponse = await fetch(attachment.url);
 				if (!attachmentResponse.ok) return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
