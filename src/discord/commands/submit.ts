@@ -113,6 +113,8 @@ export default command({
 				const attachmentResponse = await fetch(attachment.url);
 				if (!attachmentResponse.ok) return messageResponse('Failed to download the attachment', MessageFlags.Ephemeral);
 
+				console.log('Attachment downloaded successfully:', attachment.url);
+
 				const imageBuffer = await attachmentResponse.arrayBuffer();
 
 				// upload the pillow to r2
@@ -186,6 +188,8 @@ export default command({
 					`A soft new addition from <@${userId}>.`,
 				];
 
+				console.log('Initiating submission to the pillow channel');
+
 				// Post to the submissions channel
 				const response: APIInteractionResponseChannelMessageWithSource = {
 					type: InteractionResponseType.ChannelMessageWithSource,
@@ -248,11 +252,14 @@ export default command({
 						],
 					},
 				};
+				console.log('Components prepared, creating response body');
 				const responseBody = new FormData();
 
 				responseBody.append('payload_json', JSON.stringify(response));
 				const file = new Blob([imageBuffer], { type: 'image/png' });
 				responseBody.append('files[0]', file, `${interaction.member.user.id}_${type}.png`);
+
+				console.log('Response prepared, sending to the pillow channel');
 
 				return new Response(responseBody, {
 					status: 200,
