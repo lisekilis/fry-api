@@ -270,9 +270,6 @@ export default command({
 
 				const res = await fetch(`${RouteBases.api}/${Routes.interactionCallback(interaction.id, interaction.token)}`, {
 					method: 'POST',
-					headers: {
-						'Content-Type': 'multipart/form-data',
-					},
 					body: responseBody,
 				});
 				console.log('Response sent to the pillow channel:', res.status, res.statusText);
