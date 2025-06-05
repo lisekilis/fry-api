@@ -268,13 +268,14 @@ export default command({
 				// 	headers: { 'Content-Type': 'multipart/form-data' },
 				// });
 
-				fetch(`${RouteBases.api}/${Routes.interactionCallback(interaction.id, interaction.token)}`, {
+				const res = await fetch(`${RouteBases.api}/${Routes.interactionCallback(interaction.id, interaction.token)}`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'multipart/form-data',
 					},
 					body: responseBody,
 				});
+				console.log('Response sent to the pillow channel:', res.status, res.statusText);
 				return new Response(undefined, {
 					status: 200,
 				});
