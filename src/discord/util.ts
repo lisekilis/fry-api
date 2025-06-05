@@ -1,17 +1,11 @@
 import {
-	APIActionRowComponent,
-	APIChatInputApplicationCommandGuildInteraction,
 	APIChatInputApplicationCommandInteraction,
-	APIEmbed,
-	APIGuildInteraction,
 	APIInteraction,
 	APIInteractionResponseChannelMessageWithSource,
 	ApplicationCommandOptionType,
-	ButtonStyle,
-	ComponentType,
 	MessageFlags,
+	PermissionFlagsBits,
 } from 'discord-api-types/v10';
-import { PhotoR2Objects, PillowR2Objects, Settings } from '../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
 import { APIChatInputApplicationSubcommandInteraction, APIChatInputApplicationGroupSubcommandInteraction } from './types';
 import { messageResponse } from './responses';
@@ -178,7 +172,7 @@ export async function verifyAdmin(interaction: APIInteraction, env: Env): Promis
 	if (whitelistCheck) return whitelistCheck;
 
 	if (isGuildInteraction(interaction)) {
-		if (!interaction.member.permissions.includes('Administrator')) {
+		if ((BigInt(interaction.member.permissions) & PermissionFlagsBits.Administrator) !== PermissionFlagsBits.Administrator) {
 			return messageResponse('Only Administrators are permitted to use this command', MessageFlags.Ephemeral);
 		}
 		return false;
