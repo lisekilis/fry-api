@@ -259,23 +259,9 @@ export default command({
 
 				responseBody.append('payload_json', JSON.stringify(response));
 				const file = new Blob([imageBuffer], { type: 'image/png' });
-				responseBody.append('files[0]', file, `${interaction.member.user.id}_${type}.png`);
-
-				console.log('Response prepared, sending to the pillow channel');
-
-				// return new Response(responseBody, {
-				// 	status: 200,
-				// 	headers: { 'Content-Type': 'multipart/form-data' },
-				// });
-
-				const res = await fetch(`${RouteBases.api}/${Routes.interactionCallback(interaction.id, interaction.token)}`, {
-					method: 'POST',
-					body: responseBody,
-				});
-				console.log('Response sent to the pillow channel:', res.status, res.statusText);
-				return new Response(undefined, {
-					status: 200,
-				});
+				console.log('Appending file to response body:', `${interaction.member.user.id}_${type}.png`);
+				responseBody.append('files[0]', file, attachment.filename);
+				return new Response(responseBody);
 			},
 			executeComponent: async (interaction, customId, env) => {
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
