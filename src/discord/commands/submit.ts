@@ -18,6 +18,7 @@ import { isGuildInteraction } from 'discord-api-types/utils';
 import { messageResponse } from '../responses';
 import { parse } from 'path';
 import { getDate, getTimestamp } from 'discord-snowflake';
+import { stat } from 'fs';
 
 export default command({
 	name: 'submit',
@@ -248,6 +249,7 @@ export default command({
 							{
 								id: '0',
 								filename: `${interaction.member.user.id}_${type}.png`,
+								description: name,
 							},
 						],
 					},
@@ -261,9 +263,20 @@ export default command({
 
 				console.log('Response prepared, sending to the pillow channel');
 
-				return new Response(responseBody, {
+				// return new Response(responseBody, {
+				// 	status: 200,
+				// 	headers: { 'Content-Type': 'multipart/form-data' },
+				// });
+
+				fetch(`${RouteBases.api}/${Routes.interactionCallback(interaction.id, interaction.token)}`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'multipart/form-data',
+					},
+					body: responseBody,
+				});
+				return new Response(undefined, {
 					status: 200,
-					headers: { 'Content-Type': 'multipart/form-data' },
 				});
 			},
 			executeComponent: async (interaction, customId, env) => {
