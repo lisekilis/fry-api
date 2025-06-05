@@ -22,7 +22,6 @@ import {
 	SubcommandGroupParameters,
 	GroupSubcommand,
 } from '../types';
-import { json } from 'stream/consumers';
 
 /**
  * Main Discord command dispatcher.
@@ -237,8 +236,10 @@ async function executeCommandModule(
 	if (isChatInputApplicationCommandInteraction(interaction)) {
 		const res = await command.execute(interaction, env, ctx);
 		if (res instanceof Response) {
+			console.warn('Command executed returned a Response directly:', res);
 			return res;
 		}
+		console.log('Command executed successfully:', res);
 		return new Response(JSON.stringify(res), {
 			status: 200,
 			headers: { 'Content-Type': 'application/json' },
