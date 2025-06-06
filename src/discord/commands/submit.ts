@@ -3,6 +3,7 @@ import {
 	APIEmbedField,
 	APIInteractionResponseChannelMessageWithSource,
 	APIInteractionResponseUpdateMessage,
+	APIMessageTopLevelComponent,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ButtonStyle,
@@ -311,170 +312,180 @@ export default command({
 				if (!pillow) return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
 				console.log('Pillow image fetched successfully');
 
-				if (action === 'approve') {
-					console.log('Processing approve action');
-					const customMetadata: PillowData = {
-						approverId: interaction.member.user.id,
-						userId,
-						name,
-						type: type,
-						submittedAt: interaction.message.timestamp,
-						approvedAt: new Date().toISOString(),
-						userName,
-					};
-					console.log('Custom metadata for R2:', customMetadata);
-					try {
-						console.log('Uploading pillow to R2 with ID:', pillowId);
-						await env.FRY_PILLOWS.put(pillowId, pillow, {
-							httpMetadata: {
-								contentType: 'image/png',
-							},
-							customMetadata,
+				let components: APIMessageTopLevelComponent[];
+				switch (action) {
+					case 'approve':
+						console.log('Processing approve action');
+						const customMetadata: PillowData = {
+							approverId: interaction.member.user.id,
+							userId,
+							name,
+							type: type,
+							submittedAt: interaction.message.timestamp,
+							approvedAt: new Date().toISOString(),
+							userName,
+						};
+						console.log('Custom metadata for R2:', customMetadata);
+						try {
+							console.log('Uploading pillow to R2 with ID:', pillowId);
+							await env.FRY_PILLOWS.put(pillowId, pillow, {
+								httpMetadata: {
+									contentType: 'image/png',
+								},
+								customMetadata,
+							});
+							console.log('Pillow uploaded to R2 successfully');
+						} catch (error) {
+							console.error('R2 upload error:', error);
+							return messageResponse(
+								`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+								MessageFlags.Ephemeral
+							);
+						}
+						components = interaction.message.components!.map((component) => {
+							if (component.type === ComponentType.Container)
+								return {
+									type: ComponentType.Container,
+									accent_color: 0x9469c9,
+									components: component.components.map((subComponent) => {
+										switch (subComponent.type) {
+											case ComponentType.MediaGallery:
+												return {
+													type: ComponentType.MediaGallery,
+													items: [
+														{
+															media: { url: `attachment://${userId}_${type}.png` },
+															description: name,
+														},
+													],
+												};
+											case ComponentType.ActionRow:
+												return {
+													type: ComponentType.TextDisplay,
+													content: `-# submission approved by <@${interaction.member.user.id}> | <t:${getDate(
+														`${BigInt(interaction.id)}`
+													).getSeconds()}:f>`,
+												};
+											default:
+												return subComponent;
+										}
+									}),
+								};
+							return component;
 						});
-						console.log('Pillow uploaded to R2 successfully');
-					} catch (error) {
-						console.error('R2 upload error:', error);
-						return messageResponse(
-							`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-							MessageFlags.Ephemeral
-						);
-					}
-					const components = interaction.message.components!.map((component) => {
-						if (component.type === ComponentType.Container) {
-							return component.components.map((subComponent) => {
-								switch (subComponent.type) {
-									case ComponentType.MediaGallery:
-										return {
-											type: ComponentType.MediaGallery,
-											items: [
-												{
-													media: { url: `attachment://${userId}_${type}.png` },
-													description: name,
-												},
-											],
-										};
-									case ComponentType.ActionRow:
-										return {
-											type: ComponentType.TextDisplay,
-											content: `-# Submission approved by <@${interaction.member.user.id}> | <t:${getDate(
-												`${BigInt(interaction.id)}`
-											).getSeconds()}:f>`,
-										};
-									default:
-										return subComponent;
-								}
-							});
-						}
-						return component;
-					});
-					try {
-						await fetch(`${RouteBases.api}${Routes.webhook(interaction.application_id, interaction.token)}`, {
-							method: 'PATCH',
-							headers: {
-								'Content-Type': 'application/json',
-							},
-							body: JSON.stringify({
-								type: InteractionResponseType.UpdateMessage,
-								data: {
-									flags: MessageFlags.IsComponentsV2,
-									components,
-									attachments: [
-										{
-											id: '0',
-											filename: `${userId}_${type}.png`,
-										},
-									],
+						try {
+							await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+								method: 'PATCH',
+								headers: {
+									'Content-Type': 'application/json',
 								},
-							}),
-						})
-							.then((res) => {
-								console.log('Message update API response:', res);
-								return res.json();
+								body: JSON.stringify({
+									type: InteractionResponseType.UpdateMessage,
+									data: {
+										flags: MessageFlags.IsComponentsV2,
+										components,
+										attachments: [
+											{
+												id: '0',
+												filename: `${userId}_${type}.png`,
+											},
+										],
+									},
+								}),
 							})
-							.catch(() => {
-								console.error('Failed to update message');
-								return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
-							});
-						console.log('Message updated successfully for approval.');
-					} catch (error) {
-						console.error('Error in approve flow:', error);
-						return messageResponse(
-							`An error occurred while approving: ${error instanceof Error ? error.message : String(error)}`,
-							MessageFlags.Ephemeral
-						);
-					}
-					console.log('Approve action completed');
-					return messageResponse(
-						`Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
-						MessageFlags.Ephemeral
-					);
-				}
-				if (action === 'deny') {
-					console.log('Processing deny action');
-					const components = interaction.message.components!.map((component) => {
-						if (component.type === ComponentType.Container) {
-							return component.components.map((subComponent) => {
-								switch (subComponent.type) {
-									case ComponentType.MediaGallery:
-										return {
-											type: ComponentType.MediaGallery,
-											items: [
-												{
-													media: { url: `attachment://${userId}_${type}.png` },
-													description: name,
-													spoiler: true,
-												},
-											],
-										};
-									case ComponentType.TextDisplay:
-										return {
-											type: ComponentType.TextDisplay,
-											content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${getDate(
-												`${BigInt(interaction.id)}`
-											).getSeconds()}:f>`,
-										};
-									default:
-										return subComponent;
-								}
-							});
+								.then((res) => {
+									console.log('Message update API response:', res);
+									return res.json();
+								})
+								.catch(() => {
+									console.error('Failed to update message');
+									return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
+								});
+							console.log('Message updated successfully for approval.');
+						} catch (error) {
+							console.error('Error in approve flow:', error);
+							return messageResponse(
+								`An error occurred while approving: ${error instanceof Error ? error.message : String(error)}`,
+								MessageFlags.Ephemeral
+							);
 						}
-						return component;
-					});
-					try {
-						await fetch(`${RouteBases.api}${Routes.webhook(interaction.application_id, interaction.token)}`, {
-							method: 'PATCH',
-							headers: {
-								'Content-Type': 'application/json',
-							},
-							body: JSON.stringify({
-								type: InteractionResponseType.UpdateMessage,
-								data: {
-									flags: MessageFlags.IsComponentsV2,
-									components,
-								},
-							}),
-						})
-							.then((res) => {
-								console.log('Message update API response:', res);
-								return res.json();
-							})
-							.catch(() => {
-								console.error('Failed to update message');
-								return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
-							});
-						console.log('Message updated successfully for denial.');
-					} catch (error) {
-						console.error('Error in deny flow:', error);
+						console.log('Approve action completed');
 						return messageResponse(
-							`An error occurred while denying: ${error instanceof Error ? error.message : String(error)}`,
+							`Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
 							MessageFlags.Ephemeral
 						);
-					}
-					console.log('Deny action completed');
-					return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
+
+					case 'deny':
+						console.log('Processing deny action');
+						components = interaction.message.components!.map((component) => {
+							if (component.type === ComponentType.Container) {
+								return {
+									type: ComponentType.Container,
+									accent_color: 0x9469c9,
+									components: component.components.map((subComponent) => {
+										switch (subComponent.type) {
+											case ComponentType.MediaGallery:
+												return {
+													type: ComponentType.MediaGallery,
+													items: [
+														{
+															media: { url: `attachment://${userId}_${type}.png` },
+															description: name,
+															spoiler: true,
+														},
+													],
+												};
+											case ComponentType.TextDisplay:
+												return {
+													type: ComponentType.TextDisplay,
+													content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${getDate(
+														`${BigInt(interaction.id)}`
+													).getSeconds()}:f>`,
+												};
+											default:
+												return subComponent;
+										}
+									}),
+								};
+							}
+							return component;
+						});
+						try {
+							await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+								method: 'PATCH',
+								headers: {
+									'Content-Type': 'application/json',
+								},
+								body: JSON.stringify({
+									type: InteractionResponseType.UpdateMessage,
+									data: {
+										flags: MessageFlags.IsComponentsV2,
+										components,
+									},
+								}),
+							})
+								.then((res) => {
+									console.log('Message update API response:', res);
+									return res.json();
+								})
+								.catch(() => {
+									console.error('Failed to update message');
+									return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
+								});
+							console.log('Message updated successfully for denial.');
+						} catch (error) {
+							console.error('Error in deny flow:', error);
+							return messageResponse(
+								`An error occurred while denying: ${error instanceof Error ? error.message : String(error)}`,
+								MessageFlags.Ephemeral
+							);
+						}
+						console.log('Deny action completed');
+						return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
+					default:
+						console.log('executeComponent finished, no action taken or unknown action:', { action });
+						return messageResponse('Unknown action', MessageFlags.Ephemeral);
 				}
-				console.log('executeComponent finished, no action taken or unknown action:', { action });
-				return messageResponse('Unknown action', MessageFlags.Ephemeral);
 			},
 		}),
 	],
