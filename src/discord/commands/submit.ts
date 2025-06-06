@@ -301,7 +301,7 @@ export default command({
 				const userId = interaction.message.interaction_metadata.user.id;
 				const pillowId = `${userId}_${type}`;
 				console.log('User ID and Pillow ID:', { userId, pillowId });
-				console.log(interaction.message.attachments[0].url);
+				console.log(interaction.message.attachments);
 				console.log('Fetching pillow image from URL:', item.media.url);
 				const pillow = await fetch(item.media.url)
 					.then((res) => res.arrayBuffer())
