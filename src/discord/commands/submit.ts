@@ -264,20 +264,25 @@ export default command({
 				return new Response(responseBody);
 			},
 			executeComponent: async (interaction, customId, env) => {
+				console.log('executeComponent started', { interaction, customId });
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 				const parts = customId.split('-');
 				const action = parts[1];
 				const userName = parts.slice(2).join('-');
+				console.log('Parsed customId parts:', { action, userName });
 				const item = interaction.message.components
 					?.find((component) => component.type === ComponentType.Container)
 					?.components.find((component) => component.type === ComponentType.MediaGallery)?.items[0];
 				if (!item || !item.media || !item.media.url || !item.description) {
+					console.error('Image item or its properties not found in submission', { item });
 					return messageResponse('No image found in the submission', MessageFlags.Ephemeral);
 				}
 				const name = item.description as string;
 				const type = item.media.url.split('/').pop()?.split('_')[1] as PillowType;
+				console.log('Extracted item details:', { name, type });
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 				const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
+				console.log('Parsed settings:', parsedSettings);
 
 				if (!parsedSettings.modRoleId)
 					return messageResponse(
@@ -287,12 +292,16 @@ export default command({
 				if (!interaction.member.roles.includes(parsedSettings.modRoleId))
 					return messageResponse('Only image moderators are allowed to manage submissions', MessageFlags.Ephemeral);
 
-				if (!interaction.message.interaction_metadata || !interaction.message.interaction_metadata.user)
+				if (!interaction.message.interaction_metadata || !interaction.message.interaction_metadata.user) {
+					console.error('Interaction metadata or user not found');
 					return messageResponse('This interaction has no user', MessageFlags.Ephemeral);
+				}
 
 				const userId = interaction.message.interaction_metadata.user.id;
 				const pillowId = `${userId}_${type}`;
+				console.log('User ID and Pillow ID:', { userId, pillowId });
 
+				console.log('Fetching pillow image from URL:', interaction.message.attachments[0].url);
 				const pillow = await fetch(interaction.message.attachments[0].url)
 					.then((res) => res.arrayBuffer())
 					.catch(() => {
@@ -300,8 +309,10 @@ export default command({
 						return null;
 					});
 				if (!pillow) return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
+				console.log('Pillow image fetched successfully');
 
 				if (action === 'approve') {
+					console.log('Processing approve action');
 					const customMetadata: PillowData = {
 						approverId: interaction.member.user.id,
 						userId,
@@ -311,13 +322,16 @@ export default command({
 						approvedAt: new Date().toISOString(),
 						userName,
 					};
+					console.log('Custom metadata for R2:', customMetadata);
 					try {
+						console.log('Uploading pillow to R2 with ID:', pillowId);
 						await env.FRY_PILLOWS.put(pillowId, pillow, {
 							httpMetadata: {
 								contentType: 'image/png',
 							},
 							customMetadata,
 						});
+						console.log('Pillow uploaded to R2 successfully');
 					} catch (error) {
 						console.error('R2 upload error:', error);
 						return messageResponse(
@@ -373,11 +387,15 @@ export default command({
 								},
 							}),
 						})
-							.then((res) => res.json())
+							.then((res) => {
+								console.log('Message update API response:', res);
+								return res.json();
+							})
 							.catch(() => {
 								console.error('Failed to update message');
 								return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
 							});
+						console.log('Message updated successfully for approval.');
 					} catch (error) {
 						console.error('Error in approve flow:', error);
 						return messageResponse(
@@ -385,12 +403,14 @@ export default command({
 							MessageFlags.Ephemeral
 						);
 					}
+					console.log('Approve action completed');
 					return messageResponse(
 						`Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
 						MessageFlags.Ephemeral
 					);
 				}
 				if (action === 'deny') {
+					console.log('Processing deny action');
 					const components = interaction.message.components!.map((component) => {
 						if (component.type === ComponentType.Container) {
 							return component.components.map((subComponent) => {
@@ -434,11 +454,15 @@ export default command({
 								},
 							}),
 						})
-							.then((res) => res.json())
+							.then((res) => {
+								console.log('Message update API response:', res);
+								return res.json();
+							})
 							.catch(() => {
 								console.error('Failed to update message');
 								return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
 							});
+						console.log('Message updated successfully for denial.');
 					} catch (error) {
 						console.error('Error in deny flow:', error);
 						return messageResponse(
@@ -446,8 +470,10 @@ export default command({
 							MessageFlags.Ephemeral
 						);
 					}
+					console.log('Deny action completed');
 					return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
 				}
+				console.log('executeComponent finished, no action taken or unknown action.');
 				return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 			},
 		}),
