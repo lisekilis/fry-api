@@ -278,7 +278,7 @@ export default command({
 					return messageResponse('No image found in the submission', MessageFlags.Ephemeral);
 				}
 				const name = item.description as string;
-				const type = item.media.url.split('/').pop()?.split('_')[1] as PillowType;
+				const type = item.media.url.split('/').pop()?.split('_')[1].split('.png')[0] as PillowType;
 				console.log('Extracted item details:', { name, type });
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 				const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
@@ -301,8 +301,8 @@ export default command({
 				const pillowId = `${userId}_${type}`;
 				console.log('User ID and Pillow ID:', { userId, pillowId });
 
-				console.log('Fetching pillow image from URL:', interaction.message.attachments[0].url);
-				const pillow = await fetch(interaction.message.attachments[0].url)
+				console.log('Fetching pillow image from URL:', item.media.url);
+				const pillow = await fetch(item.media.url)
 					.then((res) => res.arrayBuffer())
 					.catch(() => {
 						console.error('Failed to fetch pillow image');
