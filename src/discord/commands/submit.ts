@@ -473,7 +473,7 @@ export default command({
 					console.log('Deny action completed');
 					return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
 				}
-				console.log('executeComponent finished, no action taken or unknown action.');
+				console.log('executeComponent finished, no action taken or unknown action:', { action });
 				return messageResponse('Unknown action', MessageFlags.Ephemeral);
 			},
 		}),
