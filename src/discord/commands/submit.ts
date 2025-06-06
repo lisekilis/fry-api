@@ -474,7 +474,7 @@ export default command({
 					return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
 				}
 				console.log('executeComponent finished, no action taken or unknown action.');
-				return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
+				return messageResponse('Unknown action', MessageFlags.Ephemeral);
 			},
 		}),
 	],
