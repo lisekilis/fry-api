@@ -312,6 +312,7 @@ export default command({
 				if (!pillow) return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
 				console.log('Pillow image fetched successfully');
 
+				console.log('Preparing to process action:', action);
 				let components: APIMessageTopLevelComponent[];
 				switch (action) {
 					case 'approve':
