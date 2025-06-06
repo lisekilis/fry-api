@@ -268,8 +268,8 @@ export default command({
 				console.log('executeComponent started', { interaction, customId });
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 				const parts = customId.split('-');
-				const action = parts[1];
-				const userName = parts.slice(2).join('-');
+				const action = parts[0];
+				const userName = parts.slice(1).join('-');
 				console.log('Parsed customId parts:', { action, userName });
 				const item = interaction.message.components
 					?.find((component) => component.type === ComponentType.Container)
