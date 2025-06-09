@@ -441,37 +441,31 @@ export default command({
 
 							return component;
 						});
-						try {
-							console.log('Updating message components for denial', components);
-							const updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
-								method: 'POST',
-								headers: {
-									'Content-Type': 'application/json',
-								},
-								body: JSON.stringify({
-									type: InteractionResponseType.UpdateMessage,
-									data: {
-										flags: MessageFlags.IsComponentsV2,
-										components,
-									},
-								}),
-							});
 
-							if (!updateResponse.ok) {
-								const errorBody = await updateResponse.json().catch(() => ({ message: 'Failed to parse error response from API' }));
-								console.error('Failed to update message, API error:', errorBody);
-								throw new Error(
-									`Failed to update submission message. API responded with ${updateResponse.status}: ${JSON.stringify(errorBody)}`
-								);
-							}
-							console.log('Message updated successfully for denial.');
-						} catch (error) {
-							console.error('Error in deny flow:', error);
-							return messageResponse(
-								`An error occurred while denying: ${error instanceof Error ? error.message : String(error)}`,
-								MessageFlags.Ephemeral
+						console.log('Updating message components for denial', components);
+						const updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify({
+								type: InteractionResponseType.UpdateMessage,
+								data: {
+									flags: MessageFlags.IsComponentsV2,
+									components,
+								},
+							}),
+						});
+
+						if (!updateResponse.ok) {
+							const errorBody = updateResponse.statusText;
+							console.error('Failed to update message, API error:', errorBody);
+							throw new Error(
+								`Failed to update submission message. API responded with ${updateResponse.status}: ${JSON.stringify(errorBody)}`
 							);
 						}
+						console.log('Message updated successfully for denial.');
+
 						await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
 						console.log('Deny action completed');
 
