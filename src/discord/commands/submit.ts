@@ -458,11 +458,8 @@ export default command({
 						});
 
 						if (!updateResponse.ok) {
-							const errorBody = updateResponse.statusText;
-							console.error('Failed to update message, API error:', errorBody);
-							throw new Error(
-								`Failed to update submission message. API responded with ${updateResponse.status}: ${JSON.stringify(errorBody)}`
-							);
+							console.error('Failed to update message, API error:', updateResponse.statusText);
+							return messageResponse(`Failed to update the submission message: ${updateResponse.statusText}`, MessageFlags.Ephemeral);
 						}
 						console.log('Message updated successfully for denial.');
 
