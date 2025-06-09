@@ -306,15 +306,25 @@ export default command({
 				const pillowId = `${userId}_${type}`;
 				console.log('User ID and Pillow ID:', { userId, pillowId });
 
-				console.log('Fetching pillow image from URL:', url);
+				console.log('Attempting to fetch pillow image from URL:', url.toString());
 
 				const pillow = await fetch(url)
-					.then((res) => res.arrayBuffer())
-					.catch(() => {
-						console.error('Failed to fetch pillow image');
+					.then(async (res) => {
+						console.log('Fetch response status:', res.status, res.statusText);
+						if (!res.ok) {
+							console.error('Fetch failed with status:', res.status, res.statusText, await res.text());
+							return null;
+						}
+						return res.arrayBuffer();
+					})
+					.catch((error) => {
+						console.error('Failed to fetch pillow image due to error:', error);
 						return null;
 					});
-				if (!pillow) return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
+				if (!pillow) {
+					console.error('Pillow data is null after fetch attempt.');
+					return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
+				}
 				console.log('Pillow image fetched successfully');
 
 				console.log('Preparing to process action:', action);
