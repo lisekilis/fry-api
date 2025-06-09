@@ -374,7 +374,7 @@ export default command({
 							return component;
 						});
 						try {
-							await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token) + '/messages/@original', {
+							await fetch(RouteBases.api + Routes.webhookMessage(interaction.application_id, interaction.token), {
 								method: 'PATCH',
 								headers: {
 									'Content-Type': 'application/json',
@@ -452,7 +452,7 @@ export default command({
 						});
 						try {
 							console.log('Updating message components for denial', components);
-							await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token) + `/messages/@original`, {
+							await fetch(RouteBases.api + Routes.webhookMessage(interaction.application_id, interaction.token), {
 								method: 'PATCH',
 								headers: {
 									'Content-Type': 'application/json',
