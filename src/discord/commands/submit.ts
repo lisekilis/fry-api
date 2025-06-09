@@ -442,7 +442,7 @@ export default command({
 							return component;
 						});
 
-						console.log('Updating message components for denial', components);
+						console.log('Updating message components for denial');
 						const updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
@@ -456,7 +456,7 @@ export default command({
 								},
 							}),
 						});
-
+						console.log('help!');
 						if (!updateResponse.ok) {
 							console.error('Failed to update message, API error:', updateResponse.statusText);
 							return messageResponse(`Failed to update the submission message: ${updateResponse.statusText}`, MessageFlags.Ephemeral);
