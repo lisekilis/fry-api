@@ -418,7 +418,7 @@ export default command({
 					case 'deny':
 						console.log('Processing deny action');
 						components = interaction.message.components!.map((component) => {
-							if (component.type === ComponentType.Container) {
+							if (component.type === ComponentType.Container)
 								return {
 									type: ComponentType.Container,
 									accent_color: 0x9469c9,
@@ -447,11 +447,15 @@ export default command({
 										}
 									}),
 								};
-							}
+
 							return component;
 						});
 						try {
 							console.log('Updating message components for denial', components);
+							console.log(
+								'Fetching webhook URL for interaction:',
+								RouteBases.api + Routes.webhook(interaction.application_id, interaction.token)
+							);
 							await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
 								method: 'PATCH',
 								headers: {
