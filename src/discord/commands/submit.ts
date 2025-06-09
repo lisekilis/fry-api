@@ -384,12 +384,6 @@ export default command({
 									data: {
 										flags: MessageFlags.IsComponentsV2,
 										components,
-										attachments: [
-											{
-												id: '0',
-												filename: `${userId}_${type}.png`,
-											},
-										],
 									},
 								}),
 							})
@@ -462,12 +456,6 @@ export default command({
 									data: {
 										flags: MessageFlags.IsComponentsV2,
 										components,
-										attachments: [
-											{
-												id: '0',
-												filename: `${userId}_${type}.png`,
-											},
-										],
 									},
 								}),
 							});
