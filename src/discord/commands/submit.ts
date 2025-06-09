@@ -380,17 +380,14 @@ export default command({
 									'Content-Type': 'application/json',
 								},
 								body: JSON.stringify({
-									type: InteractionResponseType.UpdateMessage,
-									data: {
-										flags: MessageFlags.IsComponentsV2,
-										components,
-										attachments: [
-											{
-												id: '0',
-												filename: `${userId}_${type}.png`,
-											},
-										],
-									},
+									flags: MessageFlags.IsComponentsV2,
+									components,
+									attachments: [
+										{
+											id: '0',
+											filename: `${userId}_${type}.png`,
+										},
+									],
 								}),
 							})
 								.then((res) => {
@@ -458,11 +455,14 @@ export default command({
 									'Content-Type': 'application/json',
 								},
 								body: JSON.stringify({
-									type: InteractionResponseType.UpdateMessage,
-									data: {
-										flags: MessageFlags.IsComponentsV2,
-										components,
-									},
+									flags: MessageFlags.IsComponentsV2,
+									components,
+									attachments: [
+										{
+											id: '0',
+											filename: `${userId}_${type}.png`,
+										},
+									],
 								}),
 							})
 								.then((res) => {
