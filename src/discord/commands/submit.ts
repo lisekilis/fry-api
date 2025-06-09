@@ -457,7 +457,6 @@ export default command({
 								}),
 							});
 
-							console.log('Message update API response status:', updateResponse.status);
 							if (!updateResponse.ok) {
 								const errorBody = await updateResponse.json().catch(() => ({ message: 'Failed to parse error response from API' }));
 								console.error('Failed to update message, API error:', errorBody);
@@ -476,22 +475,26 @@ export default command({
 						await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
 						console.log('Deny action completed');
 
-						await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-							},
-							body: JSON.stringify({
-								content: `Pillow submission denied: ${name} (${type}) by <@${interaction.member.user.id}>`,
-								flags: MessageFlags.Ephemeral,
-							}),
-						}).catch((error) => {
-							console.error('Failed to send denial message:', error);
-						});
+						return messageResponse(
+							`Denied pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
+							MessageFlags.Ephemeral
+						);
+					// await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+					// 	method: 'POST',
+					// 	headers: {
+					// 		'Content-Type': 'application/json',
+					// 	},
+					// 	body: JSON.stringify({
+					// 		content: `Pillow submission denied: ${name} (${type}) by <@${interaction.member.user.id}>`,
+					// 		flags: MessageFlags.Ephemeral,
+					// 	}),
+					// }).catch((error) => {
+					// 	console.error('Failed to send denial message:', error);
+					// });
 
-						return new Response(null, {
-							status: 202,
-						});
+					// return new Response(null, {
+					// 	status: 202,
+					// });
 					default:
 						console.log('executeComponent finished, no action taken or unknown action:', { action });
 						return messageResponse('Unknown action', MessageFlags.Ephemeral);
