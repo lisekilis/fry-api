@@ -307,13 +307,12 @@ export default command({
 
 				console.log('Retrieving pillow image from R2 with ID:', pillowId);
 
-				const pillow = await env.FRY_PILLOW_SUBMISSIONS.get(pillowId);
-
-				if (!pillow) {
+				const pillowHead = await env.FRY_PILLOW_SUBMISSIONS.head(pillowId);
+				if (!pillowHead) {
 					console.error('Pillow not found in R2:', pillowId);
 					return messageResponse('Pillow not found in storage', MessageFlags.Ephemeral);
 				}
-				console.log('Pillow retrieved successfully from R2:', pillowId);
+				const pillowPromise = env.FRY_PILLOW_SUBMISSIONS.get(pillowId);
 
 				console.log('Preparing to process action:', action);
 				let components: APIMessageTopLevelComponent[];
@@ -321,14 +320,14 @@ export default command({
 					case 'approve':
 						console.log('Processing approve action');
 						const customMetadata: PillowData = {
-							...(pillow.customMetadata as PillowSubmissionData),
+							...((await pillowPromise)!.customMetadata as PillowSubmissionData),
 							approverId: interaction.member.user.id,
 							approvedAt: new Date().toISOString(),
 						};
 						console.log('Custom metadata for R2:', customMetadata);
 						try {
 							console.log('Uploading pillow to R2 with ID:', pillowId);
-							await env.FRY_PILLOWS.put(pillowId, pillow.body, {
+							await env.FRY_PILLOWS.put(pillowId, (await pillowPromise)!.body, {
 								httpMetadata: {
 									contentType: 'image/png',
 								},
@@ -452,6 +451,7 @@ export default command({
 							return component;
 						});
 						try {
+							console.log('Updating message components for denial', components);
 							await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
 								method: 'PATCH',
 								headers: {
