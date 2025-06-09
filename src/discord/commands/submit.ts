@@ -449,7 +449,7 @@ export default command({
 						});
 						try {
 							console.log('Updating message components for denial', components);
-							await fetch(RouteBases.api + Routes.webhookMessage(interaction.application_id, interaction.token), {
+							const updateResponse = await fetch(RouteBases.api + Routes.webhookMessage(interaction.application_id, interaction.token), {
 								method: 'PATCH',
 								headers: {
 									'Content-Type': 'application/json',
@@ -464,15 +464,16 @@ export default command({
 										},
 									],
 								}),
-							})
-								.then((res) => {
-									console.log('Message update API response:', res);
-									return res.json();
-								})
-								.catch(() => {
-									console.error('Failed to update message');
-									return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
-								});
+							});
+
+							console.log('Message update API response status:', updateResponse.status);
+							if (!updateResponse.ok) {
+								const errorBody = await updateResponse.json().catch(() => ({ message: 'Failed to parse error response from API' }));
+								console.error('Failed to update message, API error:', errorBody);
+								throw new Error(
+									`Failed to update submission message. API responded with ${updateResponse.status}: ${JSON.stringify(errorBody)}`
+								);
+							}
 							console.log('Message updated successfully for denial.');
 						} catch (error) {
 							console.error('Error in deny flow:', error);
