@@ -374,7 +374,7 @@ export default command({
 							return component;
 						});
 						try {
-							await fetch(RouteBases.api + Routes.interactionCallback(interaction.application_id, interaction.token), {
+							await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 								method: 'POST',
 								headers: {
 									'Content-Type': 'application/json',
@@ -452,28 +452,25 @@ export default command({
 						});
 						try {
 							console.log('Updating message components for denial', components);
-							const updateResponse = await fetch(
-								RouteBases.api + Routes.interactionCallback(interaction.application_id, interaction.token),
-								{
-									method: 'POST',
-									headers: {
-										'Content-Type': 'application/json',
+							const updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json',
+								},
+								body: JSON.stringify({
+									type: InteractionResponseType.UpdateMessage,
+									data: {
+										flags: MessageFlags.IsComponentsV2,
+										components,
+										attachments: [
+											{
+												id: '0',
+												filename: `${userId}_${type}.png`,
+											},
+										],
 									},
-									body: JSON.stringify({
-										type: InteractionResponseType.UpdateMessage,
-										data: {
-											flags: MessageFlags.IsComponentsV2,
-											components,
-											attachments: [
-												{
-													id: '0',
-													filename: `${userId}_${type}.png`,
-												},
-											],
-										},
-									}),
-								}
-							);
+								}),
+							});
 
 							console.log('Message update API response status:', updateResponse.status);
 							if (!updateResponse.ok) {
