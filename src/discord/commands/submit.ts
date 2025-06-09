@@ -362,9 +362,7 @@ export default command({
 											case ComponentType.ActionRow:
 												return {
 													type: ComponentType.TextDisplay,
-													content: `-# submission approved by <@${interaction.member.user.id}> | <t:${getDate(
-														`${BigInt(interaction.id)}`
-													).getSeconds()}:f>`,
+													content: `-# submission approved by <@${interaction.member.user.id}> | <t:${new Date().getTime() / 1000}:f>`,
 												};
 											default:
 												return subComponent;
@@ -429,13 +427,12 @@ export default command({
 														},
 													],
 												};
-											case ComponentType.TextDisplay:
+											case ComponentType.ActionRow:
 												return {
 													type: ComponentType.TextDisplay,
-													content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${getDate(
-														`${BigInt(interaction.id)}`
-													).getSeconds()}:f>`,
+													content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${new Date().getTime() / 1000}:f>`,
 												};
+
 											default:
 												return subComponent;
 										}
