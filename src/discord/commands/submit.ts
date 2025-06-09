@@ -14,7 +14,7 @@ import {
 	Routes,
 } from 'discord-api-types/v10';
 import { command, subcommand } from '.';
-import { PillowData, PillowType, Settings } from '../../types';
+import { PillowData, PillowSubmissionData, PillowType, Settings } from '../../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
 import { messageResponse } from '../responses';
 import { parse } from 'path';
@@ -117,28 +117,30 @@ export default command({
 
 				console.log('Attachment downloaded successfully:', attachment.url);
 
-				const imageBuffer = await attachmentResponse.arrayBuffer();
+				const imageBuffer = attachmentResponse.arrayBuffer();
 
+				const customMetadata: PillowSubmissionData = {
+					userId,
+					userName,
+					name,
+					type,
+					submittedAt: new Date().toISOString(),
+				};
 				// upload the pillow to r2
-				// try {
-				// 	await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${type}`, imageBuffer, {
-				// 		httpMetadata: {
-				// 			contentType: 'image/png',
-				// 		},
-				// 		customMetadata: {
-				// 			userId,
-				// 			userName,
-				// 			name,
-				// 			type,
-				// 		},
-				// 	});
-				// } catch (error) {
-				// 	console.error('R2 upload error:', error);
-				// 	return messageResponse(
-				// 		`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-				// 		MessageFlags.Ephemeral
-				// 	);
-				// }
+				try {
+					await env.FRY_PILLOW_SUBMISSIONS.put(`${interaction.member.user.id}_${type}`, await imageBuffer, {
+						httpMetadata: {
+							contentType: 'image/png',
+						},
+						customMetadata,
+					});
+				} catch (error) {
+					console.error('R2 upload error:', error);
+					return messageResponse(
+						`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+						MessageFlags.Ephemeral
+					);
+				}
 
 				// Submission flavor text
 				const pillowText = [
@@ -259,12 +261,12 @@ export default command({
 				const responseBody = new FormData();
 
 				responseBody.append('payload_json', JSON.stringify(response));
-				const file = new Blob([imageBuffer], { type: 'image/png' });
+				const file = new Blob([await imageBuffer], { type: 'image/png' });
 				console.log('Appending file to response body:', `${interaction.member.user.id}_${type}.png`);
 				responseBody.append('files[0]', file, attachment.filename);
 				return new Response(responseBody);
 			},
-			executeComponent: async (interaction, customId, env) => {
+			executeComponent: async (interaction, customId, env, ctx) => {
 				console.log('executeComponent started', { interaction, customId });
 				if (!isGuildInteraction(interaction)) return messageResponse('This command can only be used in a server', MessageFlags.Ephemeral);
 				const parts = customId.split('-');
@@ -279,11 +281,8 @@ export default command({
 					console.error('Image item or its properties not found in submission', { item });
 					return messageResponse('No image found in the submission', MessageFlags.Ephemeral);
 				}
-
-				const url = new URL(item.media.url);
-
 				const name = item.description as string;
-				const type = url.toString().split('/').pop()?.split('_')[1].split('.png')[0] as PillowType;
+				const type = item.media.url.toString().split('/').pop()?.split('_')[1].split('.png')[0] as PillowType;
 				console.log('Extracted item details:', { name, type });
 				const settings = await env.FRY_SETTINGS.get(interaction.guild_id);
 				const parsedSettings = settings ? (JSON.parse(settings) as Settings) : {};
@@ -306,26 +305,15 @@ export default command({
 				const pillowId = `${userId}_${type}`;
 				console.log('User ID and Pillow ID:', { userId, pillowId });
 
-				console.log('Attempting to fetch pillow image from URL:', url.toString());
+				console.log('Retrieving pillow image from R2 with ID:', pillowId);
 
-				const pillow = await fetch(url)
-					.then(async (res) => {
-						console.log('Fetch response status:', res.status, res.statusText);
-						if (!res.ok) {
-							console.error('Fetch failed with status:', res.status, res.statusText, await res.text());
-							return null;
-						}
-						return res.arrayBuffer();
-					})
-					.catch((error) => {
-						console.error('Failed to fetch pillow image due to error:', error);
-						return null;
-					});
+				const pillow = await env.FRY_PILLOW_SUBMISSIONS.get(pillowId);
+
 				if (!pillow) {
-					console.error('Pillow data is null after fetch attempt.');
-					return messageResponse('Failed to fetch pillow image', MessageFlags.Ephemeral);
+					console.error('Pillow not found in R2:', pillowId);
+					return messageResponse('Pillow not found in storage', MessageFlags.Ephemeral);
 				}
-				console.log('Pillow image fetched successfully');
+				console.log('Pillow retrieved successfully from R2:', pillowId);
 
 				console.log('Preparing to process action:', action);
 				let components: APIMessageTopLevelComponent[];
@@ -333,24 +321,21 @@ export default command({
 					case 'approve':
 						console.log('Processing approve action');
 						const customMetadata: PillowData = {
+							...(pillow.customMetadata as PillowSubmissionData),
 							approverId: interaction.member.user.id,
-							userId,
-							name,
-							type: type,
-							submittedAt: interaction.message.timestamp,
 							approvedAt: new Date().toISOString(),
-							userName,
 						};
 						console.log('Custom metadata for R2:', customMetadata);
 						try {
 							console.log('Uploading pillow to R2 with ID:', pillowId);
-							await env.FRY_PILLOWS.put(pillowId, pillow, {
+							await env.FRY_PILLOWS.put(pillowId, pillow.body, {
 								httpMetadata: {
 									contentType: 'image/png',
 								},
 								customMetadata,
 							});
 							console.log('Pillow uploaded to R2 successfully');
+							env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
 						} catch (error) {
 							console.error('R2 upload error:', error);
 							return messageResponse(
@@ -496,6 +481,7 @@ export default command({
 								MessageFlags.Ephemeral
 							);
 						}
+						ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
 						console.log('Deny action completed');
 						return messageResponse(`Denied pillow submission: ${name} (${type})`, MessageFlags.Ephemeral);
 					default:

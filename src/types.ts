@@ -15,6 +15,8 @@ export type PillowData = {
 	userName: string;
 };
 
+export type PillowSubmissionData = Omit<PillowData, 'approverId' | 'approvedAt'>;
+
 export type PhotoData = {
 	date: string;
 	userId: string;
