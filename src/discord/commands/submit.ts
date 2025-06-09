@@ -375,7 +375,7 @@ export default command({
 						});
 						try {
 							await fetch(RouteBases.api + Routes.interactionCallback(interaction.application_id, interaction.token), {
-								method: 'PATCH',
+								method: 'POST',
 								headers: {
 									'Content-Type': 'application/json',
 								},
@@ -455,7 +455,7 @@ export default command({
 							const updateResponse = await fetch(
 								RouteBases.api + Routes.interactionCallback(interaction.application_id, interaction.token),
 								{
-									method: 'PATCH',
+									method: 'POST',
 									headers: {
 										'Content-Type': 'application/json',
 									},
