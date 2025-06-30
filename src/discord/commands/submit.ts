@@ -316,6 +316,7 @@ export default command({
 
 				console.log('Preparing to process action:', action);
 				let components: APIMessageTopLevelComponent[];
+				let updateResponse: Response;
 				switch (action) {
 					case 'approve':
 						console.log('Processing approve action');
@@ -371,7 +372,7 @@ export default command({
 								};
 							return component;
 						});
-						const approveResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
 								'Content-Type': 'application/json',
@@ -384,11 +385,11 @@ export default command({
 								},
 							}),
 						});
-						if (!approveResponse.ok) {
-							const errorText = await approveResponse.text().catch(() => 'Could not read error body');
-							console.error('Failed to update message, API error:', approveResponse.status, approveResponse.statusText, errorText);
+						if (!updateResponse.ok) {
+							const errorText = await updateResponse.text().catch(() => 'Could not read error body');
+							console.error('Failed to update message, API error:', updateResponse.status, updateResponse.statusText, errorText);
 							return messageResponse(
-								`Failed to update the submission message: ${approveResponse.status} ${approveResponse.statusText} - ${errorText}`,
+								`Failed to update the submission message: ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`,
 								MessageFlags.Ephemeral
 							);
 						}
@@ -435,7 +436,7 @@ export default command({
 						});
 
 						console.log('Updating message components for denial');
-						const updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
 								'Content-Type': 'application/json',
