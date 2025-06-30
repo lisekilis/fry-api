@@ -458,9 +458,14 @@ export default command({
 						});
 						console.log('help!');
 						if (!updateResponse.ok) {
-							console.error('Failed to update message, API error:', updateResponse.statusText);
-							return messageResponse(`Failed to update the submission message: ${updateResponse.statusText}`, MessageFlags.Ephemeral);
+							const errorText = await updateResponse.text().catch(() => 'Could not read error body');
+							console.error('Failed to update message, API error:', updateResponse.status, updateResponse.statusText, errorText);
+							return messageResponse(
+								`Failed to update the submission message: ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`,
+								MessageFlags.Ephemeral
+							);
 						}
+						await updateResponse.text(); // Consume body on success (e.g., for 204 No Content)
 						console.log('Message updated successfully for denial.');
 
 						await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
