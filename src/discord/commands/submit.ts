@@ -315,7 +315,38 @@ export default command({
 				const pillowPromise = env.FRY_PILLOW_SUBMISSIONS.get(pillowId);
 
 				console.log('Preparing to process action:', action);
-				let components: APIMessageTopLevelComponent[];
+				let components: APIMessageTopLevelComponent[] = interaction.message.components!.map((component) => {
+					if (component.type === ComponentType.Container)
+						return {
+							type: ComponentType.Container,
+							accent_color: 0x9469c9,
+							components: component.components.map((subComponent) => {
+								switch (subComponent.type) {
+									case ComponentType.MediaGallery:
+										return {
+											type: ComponentType.MediaGallery,
+											items: [
+												{
+													media: { url: `attachment://${userId}_${type}.png` },
+													description: name,
+													spoiler: action === 'deny', // Spoiler if denied
+												},
+											],
+										};
+									case ComponentType.ActionRow:
+										return {
+											type: ComponentType.TextDisplay,
+											content: `-# Submission ${action === 'approve' ? 'approved' : 'denied'} by <@${
+												interaction.member.user.id
+											}> | <t:${Math.floor(new Date().getTime() / 1000)}:f>`,
+										};
+									default:
+										return subComponent;
+								}
+							}),
+						};
+					return component;
+				});
 				let updateResponse: Response;
 				switch (action) {
 					case 'approve':
@@ -343,35 +374,37 @@ export default command({
 								MessageFlags.Ephemeral
 							);
 						}
-						components = interaction.message.components!.map((component) => {
-							if (component.type === ComponentType.Container)
-								return {
-									type: ComponentType.Container,
-									accent_color: 0x9469c9,
-									components: component.components.map((subComponent) => {
-										switch (subComponent.type) {
-											case ComponentType.MediaGallery:
-												return {
-													type: ComponentType.MediaGallery,
-													items: [
-														{
-															media: { url: `attachment://${userId}_${type}.png` },
-															description: name,
-														},
-													],
-												};
-											case ComponentType.ActionRow:
-												return {
-													type: ComponentType.TextDisplay,
-													content: `-# submission approved by <@${interaction.member.user.id}> | <t:${new Date().getTime() / 1000}:f>`,
-												};
-											default:
-												return subComponent;
-										}
-									}),
-								};
-							return component;
-						});
+
+						// components = interaction.message.components!.map((component) => {
+						// 	if (component.type === ComponentType.Container)
+						// 		return {
+						// 			type: ComponentType.Container,
+						// 			accent_color: 0x9469c9,
+						// 			components: component.components.map((subComponent) => {
+						// 				switch (subComponent.type) {
+						// 					case ComponentType.MediaGallery:
+						// 						return {
+						// 							type: ComponentType.MediaGallery,
+						// 							items: [
+						// 								{
+						// 									media: { url: `attachment://${userId}_${type}.png` },
+						// 									description: name,
+						// 								},
+						// 							],
+						// 						};
+						// 					case ComponentType.ActionRow:
+						// 						return {
+						// 							type: ComponentType.TextDisplay,
+						// 							content: `-# submission approved by <@${interaction.member.user.id}> | <t:${new Date().getTime() / 1000}:f>`,
+						// 						};
+						// 					default:
+						// 						return subComponent;
+						// 				}
+						// 			}),
+						// 		};
+						// 	return component;
+						// });
+
 						updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
@@ -402,38 +435,38 @@ export default command({
 
 					case 'deny':
 						console.log('Processing deny action');
-						components = interaction.message.components!.map((component) => {
-							if (component.type === ComponentType.Container)
-								return {
-									type: ComponentType.Container,
-									accent_color: 0x9469c9,
-									components: component.components.map((subComponent) => {
-										switch (subComponent.type) {
-											case ComponentType.MediaGallery:
-												return {
-													type: ComponentType.MediaGallery,
-													items: [
-														{
-															media: { url: `attachment://${userId}_${type}.png` },
-															description: name,
-															spoiler: true,
-														},
-													],
-												};
-											case ComponentType.ActionRow:
-												return {
-													type: ComponentType.TextDisplay,
-													content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${new Date().getSeconds()}:f>`,
-												};
+						// components = interaction.message.components!.map((component) => {
+						// 	if (component.type === ComponentType.Container)
+						// 		return {
+						// 			type: ComponentType.Container,
+						// 			accent_color: 0x9469c9,
+						// 			components: component.components.map((subComponent) => {
+						// 				switch (subComponent.type) {
+						// 					case ComponentType.MediaGallery:
+						// 						return {
+						// 							type: ComponentType.MediaGallery,
+						// 							items: [
+						// 								{
+						// 									media: { url: `attachment://${userId}_${type}.png` },
+						// 									description: name,
+						// 									spoiler: true,
+						// 								},
+						// 							],
+						// 						};
+						// 					case ComponentType.ActionRow:
+						// 						return {
+						// 							type: ComponentType.TextDisplay,
+						// 							content: `-# Submission denied by <@${interaction.member.user.id}> | <t:${new Date().getSeconds()}:f>`,
+						// 						};
 
-											default:
-												return subComponent;
-										}
-									}),
-								};
+						// 					default:
+						// 						return subComponent;
+						// 				}
+						// 			}),
+						// 		};
 
-							return component;
-						});
+						// 	return component;
+						// });
 
 						console.log('Updating message components for denial');
 						updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
