@@ -371,36 +371,28 @@ export default command({
 								};
 							return component;
 						});
-						try {
-							await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
-								method: 'POST',
-								headers: {
-									'Content-Type': 'application/json',
+						const approveResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify({
+								type: InteractionResponseType.UpdateMessage,
+								data: {
+									flags: MessageFlags.IsComponentsV2,
+									components,
 								},
-								body: JSON.stringify({
-									type: InteractionResponseType.UpdateMessage,
-									data: {
-										flags: MessageFlags.IsComponentsV2,
-										components,
-									},
-								}),
-							})
-								.then((res) => {
-									console.log('Message update API response:', res);
-									return res.json();
-								})
-								.catch(() => {
-									console.error('Failed to update message');
-									return messageResponse('Failed to update the submission message', MessageFlags.Ephemeral);
-								});
-							console.log('Message updated successfully for approval.');
-						} catch (error) {
-							console.error('Error in approve flow:', error);
+							}),
+						});
+						if (!approveResponse.ok) {
+							const errorText = await approveResponse.text().catch(() => 'Could not read error body');
+							console.error('Failed to update message, API error:', approveResponse.status, approveResponse.statusText, errorText);
 							return messageResponse(
-								`An error occurred while approving: ${error instanceof Error ? error.message : String(error)}`,
+								`Failed to update the submission message: ${approveResponse.status} ${approveResponse.statusText} - ${errorText}`,
 								MessageFlags.Ephemeral
 							);
 						}
+
 						console.log('Approve action completed');
 						return messageResponse(
 							`Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
