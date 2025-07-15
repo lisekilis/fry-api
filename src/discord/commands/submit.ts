@@ -495,26 +495,22 @@ export default command({
 						ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
 						console.log('Deny action completed');
 
-						return messageResponse(
-							`Denied pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
-							MessageFlags.Ephemeral
-						);
-					// await fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
-					// 	method: 'POST',
-					// 	headers: {
-					// 		'Content-Type': 'application/json',
-					// 	},
-					// 	body: JSON.stringify({
-					// 		content: `Pillow submission denied: ${name} (${type}) by <@${interaction.member.user.id}>`,
-					// 		flags: MessageFlags.Ephemeral,
-					// 	}),
-					// }).catch((error) => {
-					// 	console.error('Failed to send denial message:', error);
-					// });
+						fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify({
+								content: `Denied pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
+								flags: MessageFlags.Ephemeral,
+							}),
+						}).catch((error) => {
+							console.error('Failed to send denial message:', error);
+						});
 
-					// return new Response(null, {
-					// 	status: 202,
-					// });
+						return new Response(null, {
+							status: 202,
+						});
 					default:
 						console.log('executeComponent finished, no action taken or unknown action:', { action });
 						return messageResponse('Unknown action', MessageFlags.Ephemeral);
