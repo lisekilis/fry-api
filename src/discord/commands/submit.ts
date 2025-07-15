@@ -490,10 +490,9 @@ export default command({
 								MessageFlags.Ephemeral
 							);
 						}
-						await updateResponse.text(); // Consume body on success (e.g., for 204 No Content)
 						console.log('Message updated successfully for denial.');
 
-						await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
+						ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
 						console.log('Deny action completed');
 
 						return messageResponse(
