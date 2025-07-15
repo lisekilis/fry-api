@@ -17,9 +17,6 @@ import { command, subcommand } from '.';
 import { PillowData, PillowSubmissionData, PillowType, Settings } from '../../types';
 import { isGuildInteraction } from 'discord-api-types/utils';
 import { messageResponse } from '../responses';
-import { parse } from 'path';
-import { getDate, getTimestamp } from 'discord-snowflake';
-import { stat } from 'fs';
 
 export default command({
 	name: 'submit',
@@ -469,7 +466,7 @@ export default command({
 						// });
 
 						console.log('Updating message components for denial');
-						updateResponse = await fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						const updatePromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
 								'Content-Type': 'application/json',
@@ -483,6 +480,8 @@ export default command({
 							}),
 						});
 						console.log('help!');
+						ctx.waitUntil(updatePromise);
+						updateResponse = await updatePromise;
 						if (!updateResponse.ok) {
 							const errorText = await updateResponse.text().catch(() => 'Could not read error body');
 							console.error('Failed to update message, API error:', updateResponse.status, updateResponse.statusText, errorText);
