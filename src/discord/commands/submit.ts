@@ -344,155 +344,127 @@ export default command({
 						};
 					return component;
 				});
-				switch (action) {
-					case 'approve':
-						console.log('Processing approve action');
-						const customMetadata: PillowData = {
-							...((await pillowPromise)!.customMetadata as PillowSubmissionData),
-							approverId: interaction.member.user.id,
-							approvedAt: new Date().toISOString(),
-						};
-						console.log('Custom metadata for R2:', customMetadata);
-						try {
-							console.log('Uploading pillow to R2 with ID:', pillowId);
-							await env.FRY_PILLOWS.put(pillowId, (await pillowPromise)!.body, {
-								httpMetadata: {
-									contentType: 'image/png',
-								},
-								customMetadata,
-							});
-							console.log('Pillow uploaded to R2 successfully');
-							ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
-						} catch (error) {
-							console.error('R2 upload error:', error);
-							return messageResponse(
-								`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-								MessageFlags.Ephemeral
-							);
-						}
-
-						// components = interaction.message.components!.map((component) => {
-						// 	if (component.type === ComponentType.Container)
-						// 		return {
-						// 			type: ComponentType.Container,
-						// 			accent_color: 0x9469c9,
-						// 			components: component.components.map((subComponent) => {
-						// 				switch (subComponent.type) {
-						// 					case ComponentType.MediaGallery:
-						// 						return {
-						// 							type: ComponentType.MediaGallery,
-						// 							items: [
-						// 								{
-						// 									media: { url: `attachment://${userId}_${type}.png` },
-						// 									description: name,
-						// 								},
-						// 							],
-						// 						};
-						// 					case ComponentType.ActionRow:
-						// 						return {
-						// 							type: ComponentType.TextDisplay,
-						// 							content: `-# submission approved by <@${interaction.member.user.id}> | <t:${new Date().getTime() / 1000}:f>`,
-						// 						};
-						// 					default:
-						// 						return subComponent;
-						// 				}
-						// 			}),
-						// 		};
-						// 	return component;
-						// });
-
-						const approvePromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
+				if (action === 'approve') {
+					console.log('Processing approve action');
+					const customMetadata: PillowData = {
+						...((await pillowPromise)!.customMetadata as PillowSubmissionData),
+						approverId: interaction.member.user.id,
+						approvedAt: new Date().toISOString(),
+					};
+					console.log('Custom metadata for R2:', customMetadata);
+					try {
+						console.log('Uploading pillow to R2 with ID:', pillowId);
+						await env.FRY_PILLOWS.put(pillowId, (await pillowPromise)!.body, {
+							httpMetadata: {
+								contentType: 'image/png',
 							},
-							body: JSON.stringify({
-								type: InteractionResponseType.UpdateMessage,
-								data: {
-									flags: MessageFlags.IsComponentsV2,
-									components,
-								},
-							}),
+							customMetadata,
 						});
-						ctx.waitUntil(approvePromise);
-						const approveResponse = await approvePromise;
-						if (!approveResponse.ok) {
-							const errorText = await approveResponse.text().catch(() => 'Could not read error body');
-							console.error('Failed to update message, API error:', approveResponse.status, approveResponse.statusText, errorText);
-							return messageResponse(
-								`Failed to update the submission message: ${approveResponse.status} ${approveResponse.statusText} - ${errorText}`,
-								MessageFlags.Ephemeral
-							);
-						}
-						fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-							},
-							body: JSON.stringify({
-								content: `Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
-								flags: MessageFlags.Ephemeral,
-							}),
-						}).catch((error) => {
-							console.error('Failed to send approval message:', error);
-						});
-						return new Response(null, {
-							status: 202,
-						});
-					case 'deny':
-						console.log('Processing deny action');
-						console.log('Updating message components for denial');
-						const denyPromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-							},
-							body: JSON.stringify({
-								type: InteractionResponseType.UpdateMessage,
-								data: {
-									flags: MessageFlags.IsComponentsV2,
-									components,
-								},
-							}),
-						});
-						// i have no idea why ctx.waitUntil is needed here, but it is
-						// without it, the worker dies for no apparent reason
-						// probbably times out cuz discord servers are ass
-						ctx.waitUntil(denyPromise);
-						const denyResponse = await denyPromise;
-						if (!denyResponse.ok) {
-							const errorText = await denyResponse.text().catch(() => 'Could not read error body');
-							console.error('Failed to update message, API error:', denyResponse.status, denyResponse.statusText, errorText);
-							return messageResponse(
-								`Failed to update the submission message: ${denyResponse.status} ${denyResponse.statusText} - ${errorText}`,
-								MessageFlags.Ephemeral
-							);
-						}
-						console.log('Message updated successfully for denial.');
-
+						console.log('Pillow uploaded to R2 successfully');
 						ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
-						console.log('Pillow submission deleted from R2:', pillowId);
+					} catch (error) {
+						console.error('R2 upload error:', error);
+						return messageResponse(
+							`Failed to upload image to storage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+							MessageFlags.Ephemeral
+						);
+					}
 
-						fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
+					const approvePromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							type: InteractionResponseType.UpdateMessage,
+							data: {
+								flags: MessageFlags.IsComponentsV2,
+								components,
 							},
-							body: JSON.stringify({
-								content: `Denied pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
-								flags: MessageFlags.Ephemeral,
-							}),
-						}).catch((error) => {
-							console.error('Failed to send denial message:', error);
-						});
-						console.log('Deny action completed');
-						return new Response(null, {
-							status: 202,
-						});
-					default:
-						console.log('executeComponent finished, no action taken or unknown action:', { action });
-						return messageResponse('Unknown action', MessageFlags.Ephemeral);
+						}),
+					});
+					ctx.waitUntil(approvePromise);
+					const approveResponse = await approvePromise;
+					if (!approveResponse.ok) {
+						const errorText = await approveResponse.text().catch(() => 'Could not read error body');
+						console.error('Failed to update message, API error:', approveResponse.status, approveResponse.statusText, errorText);
+						return messageResponse(
+							`Failed to update the submission message: ${approveResponse.status} ${approveResponse.statusText} - ${errorText}`,
+							MessageFlags.Ephemeral
+						);
+					}
+
+					fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							content: `Approved pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
+							flags: MessageFlags.Ephemeral,
+						}),
+					}).catch((error) => {
+						console.error('Failed to send approval message:', error);
+					});
+
+					return new Response(null, {
+						status: 202,
+					});
 				}
+				if (action === 'deny') {
+					console.log('Processing deny action');
+					console.log('Updating message components for denial');
+					const denyPromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							type: InteractionResponseType.UpdateMessage,
+							data: {
+								flags: MessageFlags.IsComponentsV2,
+								components,
+							},
+						}),
+					});
+					// i have no idea why ctx.waitUntil is needed here, but it is
+					// without it, the worker dies for no apparent reason
+					// probbably times out cuz discord servers are ass
+					ctx.waitUntil(denyPromise);
+					const denyResponse = await denyPromise;
+					if (!denyResponse.ok) {
+						const errorText = await denyResponse.text().catch(() => 'Could not read error body');
+						console.error('Failed to update message, API error:', denyResponse.status, denyResponse.statusText, errorText);
+						return messageResponse(
+							`Failed to update the submission message: ${denyResponse.status} ${denyResponse.statusText} - ${errorText}`,
+							MessageFlags.Ephemeral
+						);
+					}
+					console.log('Message updated successfully for denial.');
+
+					ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
+					console.log('Pillow submission deleted from R2:', pillowId);
+
+					fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							content: `Denied pillow submission: ${name} (${type}) by <@${interaction.message.interaction_metadata.user.id}>`,
+							flags: MessageFlags.Ephemeral,
+						}),
+					}).catch((error) => {
+						console.error('Failed to send denial message:', error);
+					});
+					console.log('Deny action completed');
+					return new Response(null, {
+						status: 202,
+					});
+				}
+
+				console.log('executeComponent finished, no action taken or unknown action:', { action });
+				return messageResponse('Unknown action', MessageFlags.Ephemeral);
 			},
 		}),
 	],
