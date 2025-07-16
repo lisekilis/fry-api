@@ -344,8 +344,6 @@ export default command({
 						};
 					return component;
 				});
-				let updatePromise: Promise<Response>;
-				let updateResponse: Response;
 				switch (action) {
 					case 'approve':
 						console.log('Processing approve action');
@@ -403,7 +401,7 @@ export default command({
 						// 	return component;
 						// });
 
-						updatePromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						const approvePromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
 								'Content-Type': 'application/json',
@@ -416,13 +414,13 @@ export default command({
 								},
 							}),
 						});
-						ctx.waitUntil(updatePromise);
-						updateResponse = await updatePromise;
-						if (!updateResponse.ok) {
-							const errorText = await updateResponse.text().catch(() => 'Could not read error body');
-							console.error('Failed to update message, API error:', updateResponse.status, updateResponse.statusText, errorText);
+						ctx.waitUntil(approvePromise);
+						const approveResponse = await approvePromise;
+						if (!approveResponse.ok) {
+							const errorText = await approveResponse.text().catch(() => 'Could not read error body');
+							console.error('Failed to update message, API error:', approveResponse.status, approveResponse.statusText, errorText);
 							return messageResponse(
-								`Failed to update the submission message: ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`,
+								`Failed to update the submission message: ${approveResponse.status} ${approveResponse.statusText} - ${errorText}`,
 								MessageFlags.Ephemeral
 							);
 						}
@@ -444,7 +442,7 @@ export default command({
 					case 'deny':
 						console.log('Processing deny action');
 						console.log('Updating message components for denial');
-						updatePromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
+						const denyPromise = fetch(RouteBases.api + Routes.interactionCallback(interaction.id, interaction.token), {
 							method: 'POST',
 							headers: {
 								'Content-Type': 'application/json',
@@ -460,13 +458,13 @@ export default command({
 						// i have no idea why ctx.waitUntil is needed here, but it is
 						// without it, the worker dies for no apparent reason
 						// probbably times out cuz discord servers are ass
-						ctx.waitUntil(updatePromise);
-						updateResponse = await updatePromise;
-						if (!updateResponse.ok) {
-							const errorText = await updateResponse.text().catch(() => 'Could not read error body');
-							console.error('Failed to update message, API error:', updateResponse.status, updateResponse.statusText, errorText);
+						ctx.waitUntil(denyPromise);
+						const denyResponse = await denyPromise;
+						if (!denyResponse.ok) {
+							const errorText = await denyResponse.text().catch(() => 'Could not read error body');
+							console.error('Failed to update message, API error:', denyResponse.status, denyResponse.statusText, errorText);
 							return messageResponse(
-								`Failed to update the submission message: ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`,
+								`Failed to update the submission message: ${denyResponse.status} ${denyResponse.statusText} - ${errorText}`,
 								MessageFlags.Ephemeral
 							);
 						}
