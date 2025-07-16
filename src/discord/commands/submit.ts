@@ -362,7 +362,7 @@ export default command({
 								customMetadata,
 							});
 							console.log('Pillow uploaded to R2 successfully');
-							await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
+							ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
 						} catch (error) {
 							console.error('R2 upload error:', error);
 							return messageResponse(
@@ -470,7 +470,7 @@ export default command({
 						}
 						console.log('Message updated successfully for denial.');
 
-						await env.FRY_PILLOW_SUBMISSIONS.delete(pillowId);
+						ctx.waitUntil(env.FRY_PILLOW_SUBMISSIONS.delete(pillowId));
 						console.log('Pillow submission deleted from R2:', pillowId);
 
 						fetch(RouteBases.api + Routes.webhook(interaction.application_id, interaction.token), {
